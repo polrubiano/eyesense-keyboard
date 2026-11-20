@@ -22,9 +22,7 @@ On the full text of *Don Quijote*, the original EyeSense layout needs **53 % les
 
 ## Why a rewrite
 
-The keyboard comes from [EyeSense](https://github.com/polrubiano/eyesense), my applied research project: a Predictive Augmentative Communication system that combines eye tracking, AI sentence prediction and personalised speech synthesis. EyeSense won the best Vocational Training research project award at the *Castilla y León Research and Innovation Awards 2025-26*.
-
-The source code of EyeSense is private, and its keyboard was built with XML views. This repository is an **open, standalone rewrite of that keyboard** in Jetpack Compose: the same idea, made simpler, more versatile and easier to scale.
+The keyboard comes from [EyeSense](https://github.com/polrubiano/eyesense). Its keyboard was built with XML views. This repository is an **open, standalone rewrite of that keyboard** in Jetpack Compose: the same idea, made simpler, more versatile and easier to scale.
 
 | | EyeSense (XML) | EyeSense Keyboard (Compose) |
 |---|---|---|
