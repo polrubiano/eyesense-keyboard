@@ -42,12 +42,14 @@ The keyboard comes from [EyeSense](https://github.com/polrubiano/eyesense). Its 
 
 ## Roadmap
 
-- [ ] Hexagonal panel: model, geometry, rendering and touch *(in progress)*
+- [x] Hexagonal panel: model, geometry, rendering and touch *(in progress)*
 - [ ] Functional keyboard: key model and real text input
 - [ ] Measure the new layout's eye travel with letter-metter and compare it with the original
 - [ ] Live camera background
 - [ ] Customisable key layout, persisted between sessions
 - [ ] Accessibility and polish
+
+https://github.com/user-attachments/assets/09c1d462-e1e3-4084-838f-76151e5ff557
 
 ## Tech
 
