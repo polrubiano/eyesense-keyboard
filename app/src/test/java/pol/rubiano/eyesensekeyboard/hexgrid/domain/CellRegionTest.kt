@@ -1,0 +1,120 @@
+package pol.rubiano.eyesensekeyboard.hexgrid.domain
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import kotlin.math.abs
+import kotlin.math.hypot
+import kotlin.math.sqrt
+
+class CellRegionTest {
+
+    private val geometry = PanelGeometry.fit(HexPanel(2, 3), 1080f, 840f)
+    private val hexArea = 3f * sqrt(3f) / 2f * geometry.hexRadius * geometry.hexRadius
+    private val tolerance = 0.01f
+
+    // Cells just outside the right edge of the top rows: what the top-right corner key will be made of.
+    private val missingCellRow2 = HexCoord(4, -2) // fits whole inside the panel
+    private val halfCellRow1 = HexCoord(4, -1)    // cut in half by the right edge
+
+    private fun assertSamePoint(expected: Point, actual: Point) {
+        assertEquals(expected.x, actual.x, tolerance)
+        assertEquals(expected.y, actual.y, tolerance)
+    }
+
+    private fun distanceToLine(p: Point, a: Point, b: Point): Float =
+        abs((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)) / hypot(b.x - a.x, b.y - a.y)
+
+    // --- ① regionOutline ---
+
+    @Test
+    fun `one cell's outline is its own hexagon`() {
+        val outline = geometry.regionOutline(setOf(HexCoord.ORIGIN))
+        val corners = geometry.hexCorners(HexCoord.ORIGIN)
+        assertEquals(6, outline.size)
+        corners.forEach { corner ->
+            assertTrue("Missing corner $corner", outline.any { hypot(it.x - corner.x, it.y - corner.y) < tolerance })
+        }
+    }
+
+    @Test
+    fun `two neighbours lose their shared wall`() {
+        val outline = geometry.regionOutline(setOf(HexCoord.ORIGIN, HexCoord(1, 0)))
+        assertEquals(10, outline.size) // 6 + 6 sides, minus the shared one counted twice
+        assertEquals(2 * hexArea, outline.signedArea(), 0.5f)
+    }
+
+    @Test
+    fun `the outline goes clockwise on screen`() {
+        val outline = geometry.regionOutline(setOf(HexCoord.ORIGIN, HexCoord(0, 1), HexCoord(1, 0)))
+        assertTrue(outline.signedArea() > 0f)
+    }
+
+    @Test
+    fun `cells that don't touch are not a single piece`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            geometry.regionOutline(setOf(HexCoord.ORIGIN, HexCoord(2, 0)))
+        }
+    }
+
+    @Test
+    fun `a ring with a hole in the middle is rejected`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            geometry.regionOutline(HexCoord.ORIGIN.neighbors().toSet())
+        }
+    }
+
+    // --- ② clippedToPanel ---
+
+    @Test
+    fun `a cell inside the panel isn't changed by the clip`() {
+        val outline = geometry.regionOutline(setOf(missingCellRow2))
+        assertEquals(outline.signedArea(), geometry.clippedToPanel(outline).signedArea(), 0.5f)
+    }
+
+    @Test
+    fun `a cell cut by the edge keeps only its inner half`() {
+        val clipped = geometry.clippedToPanel(geometry.regionOutline(setOf(halfCellRow1)))
+        assertEquals(hexArea / 2f, clipped.signedArea(), 0.5f)
+        assertTrue(clipped.all { it.x <= geometry.width + tolerance })
+    }
+
+    @Test
+    fun `the future corner key is one and a half cells`() {
+        val corner = geometry.clippedToPanel(geometry.regionOutline(setOf(missingCellRow2, halfCellRow1)))
+        assertEquals(1.5f * hexArea, corner.signedArea(), 0.5f)
+    }
+
+    // --- ③ insetBy ---
+
+    @Test
+    fun `on a single hexagon it matches the old inset`() {
+        val hexagon = geometry.outline(PanelSlot.Cell(HexCoord(1, -1)))
+        val old = hexagon.inset(5f).vertices
+        val new = hexagon.vertices.insetBy(5f)
+        old.zip(new).forEach { (expected, actual) -> assertSamePoint(expected, actual) }
+    }
+
+    @Test
+    fun `every side moves inwards by exactly the distance, nooks included`() {
+        // Two neighbours: their outline has two inward nooks where the wall used to be.
+        val original = geometry.regionOutline(setOf(HexCoord.ORIGIN, HexCoord(0, 1)))
+        val shrunk = original.insetBy(5f)
+        val n = original.size
+        original.indices.forEach { i ->
+            val a = original[i]
+            val b = original[(i + 1) % n]
+            assertEquals(5f, distanceToLine(shrunk[i], a, b), tolerance)
+            assertEquals(5f, distanceToLine(shrunk[(i + 1) % n], a, b), tolerance)
+        }
+        assertTrue(shrunk.signedArea() < original.signedArea())
+    }
+
+    @Test
+    fun `the clipped corner key can be shrunk too`() {
+        val corner = geometry.clippedToPanel(geometry.regionOutline(setOf(missingCellRow2, halfCellRow1)))
+        val shrunk = corner.insetBy(5f)
+        assertTrue(shrunk.all { it.x <= geometry.width - 5f + tolerance && it.y >= 5f - tolerance })
+    }
+}
