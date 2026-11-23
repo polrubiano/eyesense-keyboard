@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">EyeSenseKeyboard</string>
 
-    <!-- What TalkBack reads for each function key -->
+    <!-- What TalkBack reads for each key shown as an icon -->
+    <string name="key_space">Espacio</string>
     <string name="key_delete_character">Borrar carácter</string>
     <string name="key_clear_text">Borrar todo el texto</string>
     <string name="key_speak">Leer en voz alta</string>
