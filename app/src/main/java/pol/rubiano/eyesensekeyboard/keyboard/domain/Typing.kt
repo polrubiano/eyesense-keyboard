@@ -17,8 +17,9 @@ fun String.typed(key: KeyAssignment?): String = when (key) {
     is KeyAssignment.Function -> when (key.action) {
         // Removes the last character. On an empty text it stays empty.
         KeyAction.DeleteCharacter -> dropLast(1)
+        // Wipes everything written. On an empty text it stays empty.
+        KeyAction.ClearText -> ""
         // No behaviour yet.
-        KeyAction.ClearText,
         KeyAction.Speak,
         KeyAction.SelectEmotion -> this
     }

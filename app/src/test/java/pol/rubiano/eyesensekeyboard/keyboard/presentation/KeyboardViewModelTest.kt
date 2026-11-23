@@ -45,11 +45,18 @@ class KeyboardViewModelTest {
     }
 
     @Test
+    fun `the clear corner wipes the whole text`() {
+        listOf("s", "i", " ", "n", "o").forEach { viewModel.onSlotClick(slotOf(it)) }
+        viewModel.onSlotClick(slotOf(KeyAction.ClearText))
+        assertEquals("", viewModel.text.value)
+    }
+
+    @Test
     fun `the other corners don't change the text yet`() {
         viewModel.onSlotClick(slotOf("e"))
         CornerPosition.entries
             .map { PanelSlot.Corner(it) }
-            .filter { it != slotOf(KeyAction.DeleteCharacter) }
+            .filter { it != slotOf(KeyAction.DeleteCharacter) && it != slotOf(KeyAction.ClearText) }
             .forEach { viewModel.onSlotClick(it) }
         assertEquals("e", viewModel.text.value)
     }
