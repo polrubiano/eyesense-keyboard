@@ -74,6 +74,16 @@ class HitTestTest {
     }
 
     @Test
+    fun `tapping any part of merged hexagons returns the merged slot`() {
+        val bar = setOf(HexCoord(0, 2), HexCoord(1, 2))
+        val merged = PanelGeometry.fit(panel.copy(merged = listOf(bar)), 1080f, 840f)
+        bar.forEach { assertEquals(PanelSlot.Merged(bar), merged.slotAt(merged.center(it))) }
+        // Right on the old wall between them, too.
+        val (a, b) = bar.map { merged.center(it) }
+        assertEquals(PanelSlot.Merged(bar), merged.slotAt(towards(a, b, 0.5f)))
+    }
+
+    @Test
     fun `outside the panel there's nothing`() {
         assertNull(geometry.slotAt(Point(-1f, 10f)))
         assertNull(geometry.slotAt(Point(10f, geometry.height + 1f)))

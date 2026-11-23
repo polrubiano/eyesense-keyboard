@@ -16,8 +16,16 @@ import kotlin.math.abs
  *
  * Example (EyeSense keyboard): `HexPanel(rowsAroundCenter = 2, rings = 3)`
  * → rows of 5-6-7-6-5 = 29 hexagons + 4 corner keys = 33 slots.
+ *
+ * [merged] joins groups of hexagons into single slots ([PanelSlot.Merged]), such as a
+ * space bar. The panel doesn't know what they're for: whoever uses it decides.
+ * Each group must be inside the panel, be a single piece, and not overlap another group.
  */
-data class HexPanel(val rowsAroundCenter: Int, val rings: Int) {
+data class HexPanel(
+    val rowsAroundCenter: Int,
+    val rings: Int,
+    val merged: List<Set<HexCoord>> = emptyList(),
+) {
 
     init {
         require(rowsAroundCenter >= 0) { "rowsAroundCenter can't be negative: $rowsAroundCenter" }
@@ -30,18 +38,43 @@ data class HexPanel(val rowsAroundCenter: Int, val rings: Int) {
         .filter { abs(it.r) <= rowsAroundCenter }
         .toList()
 
+    private val cellSet: Set<HexCoord> = cells.toSet()
+
+    init {
+        merged.forEach { group ->
+            require(group.size >= 2) { "A merged group needs at least 2 hexagons: $group" }
+            val outside = group.filterNot { it in cellSet }
+            require(outside.isEmpty()) { "Merged hexagons outside the panel: $outside" }
+            require(group.isSinglePiece()) { "A merged group must be a single piece: $group" }
+        }
+        val all = merged.flatten()
+        require(all.size == all.toSet().size) { "Merged groups can't overlap: $merged" }
+    }
+
+    /** Which merged group each hexagon belongs to, if any. */
+    private val groupOf: Map<HexCoord, Set<HexCoord>> =
+        merged.flatMap { group -> group.map { it to group } }.toMap()
+
     val corners: List<PanelSlot.Corner> = CornerPosition.entries.map { PanelSlot.Corner(it) }
 
-    /** Every slot: hexagons first (by closeness to the centre), then the corner keys. */
-    val slots: List<PanelSlot> = cells.map { PanelSlot.Cell(it) } + corners
+    /**
+     * Every slot: hexagons first (by closeness to the centre), then the corner keys.
+     * A merged group takes the place of its hexagon nearest to the centre.
+     */
+    val slots: List<PanelSlot> = cells.mapNotNull { coord ->
+        val group = groupOf[coord]
+        when {
+            group == null -> PanelSlot.Cell(coord)
+            coord == cells.first { it in group } -> PanelSlot.Merged(group)
+            else -> null // already represented by its group
+        }
+    } + corners
 
     /**
      * Rows that actually have hexagons above/below the centre. If [rings] is smaller than
      * [rowsAroundCenter], the rings don't reach far enough to fill every row.
      */
     val visibleRowsAroundCenter: Int = minOf(rowsAroundCenter, rings)
-
-    private val cellSet: Set<HexCoord> = cells.toSet()
 
     /**
      * The cells that make up each corner key: the ones that are **not** in the panel,
@@ -69,9 +102,12 @@ data class HexPanel(val rowsAroundCenter: Int, val rings: Int) {
         }.toSet()
     }
 
-    /** Which slot each cell belongs to: a hexagon to itself, a corner cell to its corner. */
+    /**
+     * Which slot each cell belongs to: a hexagon to itself (or to its merged group),
+     * a corner cell to its corner.
+     */
     private val owners: Map<HexCoord, PanelSlot> =
-        cells.associateWith { PanelSlot.Cell(it) } +
+        cells.associateWith { coord -> groupOf[coord]?.let { PanelSlot.Merged(it) } ?: PanelSlot.Cell(coord) } +
             cornerCells.flatMap { (position, coords) -> coords.map { it to PanelSlot.Corner(position) } }
 
     /** Every cell that belongs to some slot. */
@@ -82,4 +118,16 @@ data class HexPanel(val rowsAroundCenter: Int, val rings: Int) {
 
     /** Is this coordinate a hexagon of the panel? */
     operator fun contains(coord: HexCoord): Boolean = coord in cellSet
+}
+
+/** Can every cell be reached from any other one, stepping only between neighbours of the group? */
+private fun Set<HexCoord>.isSinglePiece(): Boolean {
+    val reached = mutableSetOf(first())
+    val pending = ArrayDeque(reached)
+    while (pending.isNotEmpty()) {
+        pending.removeFirst().neighbors()
+            .filter { it in this && reached.add(it) }
+            .forEach { pending.addLast(it) }
+    }
+    return reached.size == size
 }

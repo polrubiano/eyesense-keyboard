@@ -36,6 +36,27 @@ class SlotOutlineTest {
     }
 
     @Test
+    fun `two merged hexagons are one shape, labelled where the wall used to be`() {
+        val a = HexCoord(0, 2)
+        val b = HexCoord(1, 2)
+        val outline = geometry.outline(PanelSlot.Merged(setOf(a, b)))
+        assertEquals(10, outline.vertices.size)
+        assertEquals(2f * hexArea, outline.vertices.signedArea(), 0.5f)
+        val ca = geometry.center(a)
+        val cb = geometry.center(b)
+        assertEquals((ca.x + cb.x) / 2f, outline.labelCenter.x, tolerance)
+        assertEquals(ca.y, outline.labelCenter.y, tolerance)
+    }
+
+    @Test
+    fun `three merged hexagons in a row are labelled on the middle one`() {
+        val row = setOf(HexCoord(-1, 2), HexCoord(0, 2), HexCoord(1, 2))
+        val labelCenter = geometry.outline(PanelSlot.Merged(row)).labelCenter
+        assertEquals(geometry.center(HexCoord(0, 2)).x, labelCenter.x, tolerance)
+        assertEquals(geometry.center(HexCoord(0, 2)).y, labelCenter.y, tolerance)
+    }
+
+    @Test
     fun `corner keys stay inside the panel`() {
         CornerPosition.entries.forEach { position ->
             val vertices = geometry.outline(PanelSlot.Corner(position)).vertices

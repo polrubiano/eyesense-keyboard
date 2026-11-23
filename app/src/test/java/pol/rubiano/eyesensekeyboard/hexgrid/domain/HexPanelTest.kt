@@ -2,6 +2,7 @@ package pol.rubiano.eyesensekeyboard.hexgrid.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -71,6 +72,43 @@ class HexPanelTest {
         assertEquals(PanelSlot.Cell(HexCoord.ORIGIN), panel.slotOf(HexCoord.ORIGIN))
         assertEquals(PanelSlot.Corner(CornerPosition.TOP_RIGHT), panel.slotOf(HexCoord(4, -1)))
         assertEquals(null, panel.slotOf(HexCoord(0, -3))) // above the panel: nobody's
+    }
+
+    // --- Merged hexagons ---
+
+    private val bar = setOf(HexCoord(0, 2), HexCoord(1, 2))
+    private val withBar = panel.copy(merged = listOf(bar))
+
+    @Test
+    fun `merging 2 hexagons turns them into a single slot`() {
+        assertEquals(32, withBar.slots.size)
+        assertEquals(1, withBar.slots.count { it == PanelSlot.Merged(bar) })
+        assertTrue(withBar.slots.none { it is PanelSlot.Cell && it.coord in bar })
+    }
+
+    @Test
+    fun `both merged hexagons belong to the same slot`() {
+        bar.forEach { assertEquals(PanelSlot.Merged(bar), withBar.slotOf(it)) }
+    }
+
+    @Test
+    fun `merging doesn't change the silhouette`() {
+        assertEquals(panel.cells, withBar.cells)
+    }
+
+    @Test
+    fun `invalid merged groups are rejected`() {
+        val invalid = listOf(
+            setOf(HexCoord.ORIGIN),                                    // only one hexagon
+            setOf(HexCoord(3, 0), HexCoord(4, 0)),                     // (4,0) is outside the panel
+            setOf(HexCoord.ORIGIN, HexCoord(2, 0)),                    // they don't touch
+        )
+        invalid.forEach { group ->
+            assertThrows(IllegalArgumentException::class.java) { panel.copy(merged = listOf(group)) }
+        }
+        assertThrows(IllegalArgumentException::class.java) {   // two groups sharing a hexagon
+            panel.copy(merged = listOf(bar, setOf(HexCoord(1, 2), HexCoord(2, 1))))
+        }
     }
 
     @Test
