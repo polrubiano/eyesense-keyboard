@@ -22,8 +22,23 @@ class TypingTest {
     }
 
     @Test
-    fun `functions don't change the text yet`() {
-        KeyAction.all.forEach { action ->
+    fun `delete character removes the last character`() {
+        assertEquals("hol", "hola".typed(KeyAssignment.Function(KeyAction.DeleteCharacter)))
+    }
+
+    @Test
+    fun `delete character on an empty text does nothing`() {
+        assertEquals("", "".typed(KeyAssignment.Function(KeyAction.DeleteCharacter)))
+    }
+
+    @Test
+    fun `delete character also removes a typed space`() {
+        assertEquals("hola", "hola ".typed(KeyAssignment.Function(KeyAction.DeleteCharacter)))
+    }
+
+    @Test
+    fun `functions without behaviour don't change the text yet`() {
+        (KeyAction.all - KeyAction.DeleteCharacter).forEach { action ->
             assertEquals("hola", "hola".typed(KeyAssignment.Function(action)))
         }
     }

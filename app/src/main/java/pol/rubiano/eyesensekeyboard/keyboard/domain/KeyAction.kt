@@ -6,8 +6,27 @@ package pol.rubiano.eyesensekeyboard.keyboard.domain
  * Each one has a stable [id]: it's what will get saved when user layouts are persisted,
  * so it must never change, even if the class gets renamed.
  *
- * Adding a function = adding a case here (and to [all]). Because it's `sealed`, the compiler
- * will point out every `when` that needs to handle it.
+ * ## Adding a function
+ *
+ * Every `when` over [KeyAction] lists all the cases with no `else`, on purpose. Add the new
+ * case and the build breaks in each place that has to decide something about it. Each
+ * compiler error is a breadcrumb:
+ *
+ * 1. **Here**: add a `data object` with a new, unique [id], and add it to [all].
+ * 2. **What the key shows**: in `presentation/KeyView.kt` (compiler errors):
+ *    - `icon()`: create the drawable first (File > New > Vector Asset, 24 dp).
+ *    - `description()`: add the text TalkBack reads to `strings.xml`.
+ * 3. **What it does to the text**: [typed] in `Typing.kt` (compiler error). If it doesn't
+ *    touch the text (voice, UI…), leave it next to the actions that return `this`.
+ * 4. **Tests**: in `TypingTest`, a test for its effect, and take it out of
+ *    `functions without behaviour don't change the text yet`.
+ * 5. **Tests that assume corners are inert**: `KeyboardViewModelTest` checks that the
+ *    corners without behaviour don't change the text. Exclude the new one there and test
+ *    it through its corner (no compiler error here: it shows up as a failing test).
+ *
+ * Optional: put it in a corner by default in `Presets.DEFAULT_FUNCTIONS`.
+ *
+ * Example to follow: [DeleteCharacter].
  */
 sealed interface KeyAction {
     val id: String
