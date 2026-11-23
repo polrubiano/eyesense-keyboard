@@ -17,19 +17,45 @@ enum class LayoutOrigin { PRESET, USER }
 /**
  * Hexagon layout: characters by default, plus functions if the user wants them.
  * It's a **partial** map: a hexagon with no entry is a free slot.
+ *
+ * [merged] says, explicitly, which hexagons act as **one key** (e.g. the space bar).
+ * Two neighbours with the same content are NOT merged unless they're listed here.
+ * A merged key is a single key, so:
+ * - all its hexagons hold the same thing (checked on creation);
+ * - editing any of its hexagons edits the whole key.
  */
 data class CharacterLayout(
     val id: LayoutId,
     val name: String,
     val origin: LayoutOrigin,
     val cells: Map<HexCoord, KeyAssignment>,
+    val merged: List<Set<HexCoord>> = emptyList(),
 ) {
+    init {
+        merged.forEach { group ->
+            val contents = group.map { cells[it] }.toSet()
+            require(contents.size == 1) { "The hexagons of a merged key must hold the same thing: $group → $contents" }
+        }
+    }
+
+    /** The hexagons of the key [coord] belongs to: its merged group, or just itself. */
+    fun keyCells(coord: HexCoord): Set<HexCoord> = merged.firstOrNull { coord in it } ?: setOf(coord)
+
     fun assign(coord: HexCoord, assignment: KeyAssignment): CharacterLayout =
-        edited { copy(cells = cells + (coord to assignment)) }
+        edited { withKey(coord, assignment) }
 
-    fun clear(coord: HexCoord): CharacterLayout = edited { copy(cells = cells - coord) }
+    fun clear(coord: HexCoord): CharacterLayout = edited { withKey(coord, null) }
 
-    fun swap(a: HexCoord, b: HexCoord): CharacterLayout = edited { copy(cells = cells.swapped(a, b)) }
+    /** Exchanges the contents of two keys. If one of them is empty, the other one moves. */
+    fun swap(a: HexCoord, b: HexCoord): CharacterLayout = edited {
+        if (b in keyCells(a)) this else withKey(a, cells[b]).withKey(b, cells[a])
+    }
+
+    /** Puts [value] (or nothing) in every hexagon of the key [coord] belongs to. */
+    private fun withKey(coord: HexCoord, value: KeyAssignment?): CharacterLayout {
+        val keyCells = keyCells(coord)
+        return copy(cells = if (value == null) cells - keyCells else cells + keyCells.associateWith { value })
+    }
 
     fun copyAsUser(newId: LayoutId, newName: String): CharacterLayout =
         copy(id = newId, name = newName, origin = LayoutOrigin.USER)
@@ -41,8 +67,8 @@ data class CharacterLayout(
 }
 
 /**
- * Triangle layout: **functions only**. The value type ([KeyAction], not [KeyAssignment])
- * makes it impossible to put a character in a triangle: the compiler doesn't allow it.
+ * Corner key layout: **functions only**. The value type ([KeyAction], not [KeyAssignment])
+ * makes it impossible to put a character in a corner key: the compiler doesn't allow it.
  */
 data class FunctionLayout(
     val id: LayoutId,

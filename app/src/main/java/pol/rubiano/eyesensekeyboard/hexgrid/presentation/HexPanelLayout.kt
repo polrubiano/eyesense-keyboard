@@ -34,13 +34,13 @@ import kotlin.math.roundToInt
  */
 @Stable
 interface HexSlotScope {
-    /** The slot's outline (hexagon or triangle), ready for `background`, `border` or `clip`. */
+    /** The slot's outline (hexagon or corner key), ready for `background`, `border` or `clip`. */
     val shape: Shape
 
-    /** Diameter of the inscribed circle: the space a label has without spilling out. */
+    /** Diameter of the label circle (one hexagon's inscribed circle): the space a label has without spilling out. */
     val labelAreaSize: Dp
 
-    /** Places the element with its centre on the slot's optical centre (the incenter). */
+    /** Places the element with its centre on the slot's label centre. */
     fun Modifier.alignToSlotCenter(): Modifier
 }
 
@@ -51,15 +51,19 @@ interface HexSlotScope {
  * - The size is derived from the available space ([PanelGeometry.fit]); the
  *   composable takes up exactly the panel's size and its parent decides where to put it.
  * - [gap] is the visual separation between slots. It only affects the drawing.
+ * - [cornerRounding] rounds the corners, as a fraction of the hexagon radius (0 = sharp),
+ *   so the panel looks equally round on any screen. Also visual only: touch zones keep
+ *   their sharp corners and still tile the panel with no dead zones.
  * - [onSlotClick] gets the slot that was tapped. Touch is detected **once, for the whole
- *   panel**, and resolved with geometry ([slotAt]): the zones are exactly hexagonal and
- *   triangular, with no overlaps or gaps, even though the slot boxes overlap.
+ *   panel**, and resolved with geometry ([slotAt]): the zones follow the honeycomb exactly,
+ *   with no overlaps or gaps, even though the slot boxes overlap.
  */
 @Composable
 fun HexPanelLayout(
     panel: HexPanel,
     modifier: Modifier = Modifier,
     gap: Dp = 4.dp,
+    cornerRounding: Float = 0.15f,
     onSlotClick: (PanelSlot) -> Unit = {},
     slotContent: @Composable HexSlotScope.(PanelSlot) -> Unit,
 ) {
@@ -77,6 +81,7 @@ fun HexPanelLayout(
         }
         // Each slot shrinks by half the gap: two neighbours together add up to the whole gap.
         val insetPx = with(density) { gap.toPx() } / 2f
+        val cornerRadiusPx = geometry.hexRadius * cornerRounding
 
         Box(
             Modifier
@@ -94,7 +99,7 @@ fun HexPanelLayout(
             panel.slots.forEach { slot ->
                 key(slot) {
                     val outline = remember(geometry, slot, insetPx) { geometry.outline(slot).inset(insetPx) }
-                    SlotBox(outline) { slotContent(slot) }
+                    SlotBox(outline, cornerRadiusPx) { slotContent(slot) }
                 }
             }
         }
@@ -103,20 +108,25 @@ fun HexPanelLayout(
 
 /** Places a box over the slot's outline (its bounding rectangle) and exposes the scope. */
 @Composable
-private fun SlotBox(outline: SlotOutline, content: @Composable HexSlotScope.() -> Unit) {
+private fun SlotBox(
+    outline: SlotOutline,
+    cornerRadius: Float,
+    content: @Composable HexSlotScope.() -> Unit,
+) {
     val density = LocalDensity.current
     val left = outline.vertices.minOf { it.x }
     val top = outline.vertices.minOf { it.y }
     val boxWidth = outline.vertices.maxOf { it.x } - left
     val boxHeight = outline.vertices.maxOf { it.y } - top
 
-    val scope = remember(outline, density) {
+    val scope = remember(outline, cornerRadius, density) {
         HexSlotScopeImpl(
             shape = PolygonShape(
-                outline.vertices.map { Point((it.x - left) / boxWidth, (it.y - top) / boxHeight) }
+                normalizedVertices = outline.vertices.map { Point((it.x - left) / boxWidth, (it.y - top) / boxHeight) },
+                cornerRadius = cornerRadius,
             ),
-            labelAreaSize = with(density) { (outline.inradius * 2f).toDp() },
-            labelCenter = Point(outline.incenter.x - left, outline.incenter.y - top),
+            labelAreaSize = with(density) { (outline.labelRadius * 2f).toDp() },
+            labelCenter = Point(outline.labelCenter.x - left, outline.labelCenter.y - top),
         )
     }
 

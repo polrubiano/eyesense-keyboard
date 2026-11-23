@@ -13,7 +13,7 @@ package pol.rubiano.eyesensekeyboard.keyboard.domain
  * compiler error is a breadcrumb:
  *
  * 1. **Here**: add a `data object` with a new, unique [id], and add it to [all].
- * 2. **What the key shows**: in `presentation/KeyView.kt` (compiler errors):
+ * 2. **What the key shows**: in `presentation/KeyFace.kt` (compiler errors):
  *    - `icon()`: create the drawable first (File > New > Vector Asset, 24 dp).
  *    - `description()`: add the text TalkBack reads to `strings.xml`.
  * 3. **What it does to the text**: [typed] in `Typing.kt` (compiler error). If it doesn't

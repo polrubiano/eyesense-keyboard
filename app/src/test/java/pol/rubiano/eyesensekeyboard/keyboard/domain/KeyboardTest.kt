@@ -1,7 +1,9 @@
 package pol.rubiano.eyesensekeyboard.keyboard.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import pol.rubiano.eyesensekeyboard.hexgrid.domain.CornerPosition
 import pol.rubiano.eyesensekeyboard.hexgrid.domain.HexCoord
@@ -21,7 +23,7 @@ class KeyboardTest {
     }
 
     @Test
-    fun `a triangle resolves to the function layout`() {
+    fun `a corner key resolves to the function layout`() {
         assertEquals(
             KeyAssignment.Function(KeyAction.DeleteCharacter),
             keyboard.keyAt(PanelSlot.Corner(CornerPosition.TOP_RIGHT)),
@@ -99,6 +101,58 @@ class KeyboardTest {
         val moved = mySpanish.clear(empty).swap(a, empty)
         assertNull(moved.cells[a])
         assertEquals(KeyAssignment.Text("e"), moved.cells[empty])
+    }
+
+    // ---- Merged keys (space bar) ----
+
+    private val spanishBar = setOf(HexCoord(0, 2), HexCoord(1, 2))
+
+    @Test
+    fun `the space bar is a single slot that writes a space`() {
+        val bar = PanelSlot.Merged(spanishBar)
+        assertEquals(1, keyboard.panel.slots.count { it == bar })
+        assertEquals(KeyAssignment.Text(" "), keyboard.keyAt(bar))
+    }
+
+    @Test
+    fun `changing language changes the space bar`() {
+        val english = keyboard.withCharacters(Presets.ENGLISH)
+        assertTrue(PanelSlot.Merged(setOf(HexCoord(-1, 2), HexCoord(0, 2), HexCoord(1, 2))) in english.panel.slots)
+        assertFalse(PanelSlot.Merged(spanishBar) in english.panel.slots)
+    }
+
+    @Test
+    fun `neighbours with the same content are not merged unless listed`() {
+        val twoA = mySpanish.copy(merged = emptyList())
+            .assign(HexCoord.ORIGIN, KeyAssignment.Text("a"))
+            .assign(HexCoord(1, 0), KeyAssignment.Text("a"))
+        val panel = keyboard.withCharacters(twoA).panel
+        assertTrue(PanelSlot.Cell(HexCoord.ORIGIN) in panel.slots)
+        assertTrue(PanelSlot.Cell(HexCoord(1, 0)) in panel.slots)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `a merged key with different contents is rejected`() {
+        mySpanish.copy(merged = listOf(setOf(HexCoord.ORIGIN, HexCoord(1, 0))))
+    }
+
+    @Test
+    fun `editing one hexagon of a merged key edits the whole key`() {
+        val edited = mySpanish.assign(HexCoord(0, 2), KeyAssignment.Text("."))
+        spanishBar.forEach { assertEquals(KeyAssignment.Text("."), edited.cells[it]) }
+    }
+
+    @Test
+    fun `swapping a letter with the space bar exchanges their contents, not their shapes`() {
+        val swapped = mySpanish.swap(HexCoord.ORIGIN, HexCoord(1, 2))
+        assertEquals(KeyAssignment.Text(" "), swapped.cells[HexCoord.ORIGIN])
+        spanishBar.forEach { assertEquals(KeyAssignment.Text("e"), swapped.cells[it]) }
+        assertEquals(mySpanish.merged, swapped.merged)
+    }
+
+    @Test
+    fun `swapping two hexagons of the same merged key changes nothing`() {
+        assertEquals(mySpanish, mySpanish.swap(HexCoord(0, 2), HexCoord(1, 2)))
     }
 
     @Test

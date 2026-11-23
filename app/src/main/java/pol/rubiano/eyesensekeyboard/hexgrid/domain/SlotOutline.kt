@@ -1,74 +1,63 @@
 package pol.rubiano.eyesensekeyboard.hexgrid.domain
 
 import kotlin.math.abs
-import kotlin.math.hypot
 
 /**
- * Outline of a slot in pixels, plus its **inscribed circle**: the largest circle that
- * fits inside it touching every side.
+ * Outline of a slot in pixels, plus the circle where its label goes.
  *
- * Hexagons and triangles both have one. That gives us two things for free:
- * - [incenter] is the natural visual centre for placing the label (in a triangle it is
- *   NOT the centre of its bounding box).
- * - [inset] can shrink the shape evenly: scaling around the incenter moves every side
- *   inwards by the same distance.
+ * The label circle is always the inscribed circle of **one hexagon**: the slot's own one,
+ * or, for a corner key, the cell that fits whole inside the panel (▣). That way icons sit
+ * in a hexagonal area, lined up with the letters of their row and just as big.
  */
 data class SlotOutline(
     val vertices: List<Point>,
-    val incenter: Point,
-    val inradius: Float,
+    val labelCenter: Point,
+    val labelRadius: Float,
 ) {
     /**
-     * The same shape with every side moved [distance] px inwards.
+     * The same shape with every side moved [distance] px inwards ([insetBy]).
      * Used to draw the visual gap between keys.
      */
     fun inset(distance: Float): SlotOutline {
         if (distance <= 0f) return this
-        require(distance < inradius) { "The inset ($distance) doesn't fit in the shape (inradius $inradius)" }
-        val factor = (inradius - distance) / inradius
+        require(distance < labelRadius) { "The inset ($distance) doesn't fit in the shape (label radius $labelRadius)" }
         return SlotOutline(
-            vertices = vertices.map { v ->
-                Point(
-                    x = incenter.x + (v.x - incenter.x) * factor,
-                    y = incenter.y + (v.y - incenter.y) * factor,
-                )
-            },
-            incenter = incenter,
-            inradius = inradius - distance,
+            vertices = vertices.insetBy(distance),
+            labelCenter = labelCenter,
+            labelRadius = labelRadius - distance,
         )
     }
 }
 
-/** Pixel outline of any slot, whether hexagon or triangle. */
+/**
+ * Pixel outline of any slot.
+ * - Hexagon → its 6 corners.
+ * - Merged hexagons → their cells joined into one shape, labelled at the middle of
+ *   their centres (with 2 cells, where the wall used to be; with 3 in a row, on the middle one).
+ * - Corner key → its cells joined into one shape, cut to the panel's rectangle.
+ */
 fun PanelGeometry.outline(slot: PanelSlot): SlotOutline = when (slot) {
     is PanelSlot.Cell -> SlotOutline(
         vertices = hexCorners(slot.coord),
-        incenter = center(slot.coord),
-        inradius = hexWidth / 2f, // from the centre to the middle of a side
+        labelCenter = center(slot.coord),
+        labelRadius = hexWidth / 2f, // from the centre to the middle of a side
     )
-    is PanelSlot.Corner -> triangleOutline(triangle(slot.position))
+    is PanelSlot.Merged -> {
+        val centers = slot.cells.map { center(it) }
+        SlotOutline(
+            vertices = regionOutline(slot.cells),
+            labelCenter = Point(centers.map { it.x }.average().toFloat(), centers.map { it.y }.average().toFloat()),
+            labelRadius = hexWidth / 2f,
+        )
+    }
+    is PanelSlot.Corner -> {
+        val cells = panel.cornerCells.getValue(slot.position)
+        // The cell that sits farthest inside the panel horizontally: the one that fits whole.
+        val wholeCell = cells.minBy { abs(2 * it.q + it.r) }
+        SlotOutline(
+            vertices = clippedToPanel(regionOutline(cells)),
+            labelCenter = center(wholeCell),
+            labelRadius = hexWidth / 2f,
+        )
+    }
 }
-
-/**
- * Inscribed circle of a triangle:
- * - centre = average of the vertices weighted by the length of the opposite side;
- * - radius = 2 × area ÷ perimeter.
- */
-private fun triangleOutline(vertices: List<Point>): SlotOutline {
-    val (a, b, c) = vertices
-    val sideA = distance(b, c) // opposite a
-    val sideB = distance(a, c) // opposite b
-    val sideC = distance(a, b) // opposite c
-    val perimeter = sideA + sideB + sideC
-    val area = abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2f
-    return SlotOutline(
-        vertices = vertices,
-        incenter = Point(
-            x = (sideA * a.x + sideB * b.x + sideC * c.x) / perimeter,
-            y = (sideA * a.y + sideB * b.y + sideC * c.y) / perimeter,
-        ),
-        inradius = 2f * area / perimeter,
-    )
-}
-
-private fun distance(p: Point, q: Point): Float = hypot(q.x - p.x, q.y - p.y)

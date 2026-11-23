@@ -16,7 +16,7 @@ import pol.rubiano.eyesensekeyboard.hexgrid.domain.HexPanel
  * them. The algorithm is the same for every language: adding a language = adding a list.
  *
  * Repeating a pinned key is allowed (several space hexagons); repeating a letter
- * in [ranked] is not.
+ * in [ranked] is not. [merged] says which pinned hexagons act as one key.
  */
 fun characterLayoutByFrequency(
     id: LayoutId,
@@ -24,6 +24,7 @@ fun characterLayoutByFrequency(
     panel: HexPanel,
     ranked: List<String>,
     pinned: Map<HexCoord, KeyAssignment> = emptyMap(),
+    merged: List<Set<HexCoord>> = emptyList(),
     origin: LayoutOrigin = LayoutOrigin.PRESET,
 ): CharacterLayout {
     val outside = pinned.keys.filterNot { it in panel }
@@ -35,5 +36,5 @@ fun characterLayoutByFrequency(
 
     val freeCells = panel.cells.filterNot { it in pinned }
     val filled = freeCells.zip(ranked) { coord, text -> coord to KeyAssignment.Text(text) }
-    return CharacterLayout(id, name, origin, pinned + filled)
+    return CharacterLayout(id, name, origin, pinned + filled, merged)
 }
