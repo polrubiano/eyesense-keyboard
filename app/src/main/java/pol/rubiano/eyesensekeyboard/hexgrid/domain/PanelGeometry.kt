@@ -73,31 +73,6 @@ class PanelGeometry(val panel: HexPanel, val hexRadius: Float) {
         }
     }
 
-    /**
-     * The 3 vertices of a triangle: [corner of the panel, point on the top/bottom edge,
-     * point aimed at the centre on the side edge].
-     *
-     * Its long side is the line that joins the outer vertices of the hexagons at the ends
-     * of each row: it touches them without overlapping and leaves no gaps.
-     * It is computed for [CornerPosition.TOP_LEFT] and the other three are its mirror images.
-     */
-    fun triangle(position: CornerPosition): List<Point> {
-        // The point sits at the height of the top-left vertex of the first hexagon in
-        // the central row: half a radius above the centre.
-        val tipY = height / 2f - hexRadius / 2f
-        // From there the long side climbs at 60°: half a hexagon sideways for every row
-        // it climbs. Up to the top edge it climbs (rows + 1/3) rows.
-        val topLegLength = (rows + 1f / 3f) * hexWidth / 2f
-
-        val topLeft = listOf(Point(0f, 0f), Point(topLegLength, 0f), Point(0f, tipY))
-        return topLeft.map { p ->
-            Point(
-                x = if (position.isLeft) p.x else width - p.x,
-                y = if (position.isTop) p.y else height - p.y,
-            )
-        }
-    }
-
     companion object {
         private val SQRT3 = sqrt(3f)
 

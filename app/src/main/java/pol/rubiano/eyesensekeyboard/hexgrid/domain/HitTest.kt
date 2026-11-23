@@ -14,28 +14,23 @@ import kotlin.math.sqrt
 /**
  * Which slot is under [point]? Null if the point falls outside the panel.
  *
- * Steps, from fastest to slowest:
+ * Point → cell → owner:
  * 1. Outside the rectangle → null.
- * 2. Work out the hexagon mathematically ([pixelToHex]). If it belongs to the panel → done.
- * 3. If not, it's on the edge: check whether it falls inside one of the 4 triangles.
- * 4. If it doesn't hit a triangle either, it's one of the small nooks left by the honeycomb's
- *    zigzag edge → it goes to the nearest hexagon. That way there are no dead zones.
+ * 2. Work out the cell mathematically ([pixelToHex]) and ask the panel whose it is:
+ *    a hexagon's or a corner key's ([HexPanel.slotOf]).
+ * 3. If it has no owner, it's one of the small nooks left by the zigzag of the top and
+ *    bottom edges → it goes to the nearest owned cell. That way there are no dead zones.
  */
 fun PanelGeometry.slotAt(point: Point): PanelSlot? {
     if (point.x !in 0f..width || point.y !in 0f..height) return null
 
-    val coord = pixelToHex(point)
-    if (coord in panel) return PanelSlot.Cell(coord)
+    panel.slotOf(pixelToHex(point))?.let { return it }
 
-    CornerPosition.entries
-        .firstOrNull { isInsideTriangle(point, triangle(it)) }
-        ?.let { return PanelSlot.Corner(it) }
-
-    val nearest = panel.cells.minBy { cell ->
+    val nearest = panel.ownedCells.minBy { cell ->
         val c = center(cell)
         (c.x - point.x) * (c.x - point.x) + (c.y - point.y) * (c.y - point.y)
     }
-    return PanelSlot.Cell(nearest)
+    return panel.slotOf(nearest)
 }
 
 /**
@@ -79,16 +74,4 @@ fun hexRound(q: Float, r: Float): HexCoord {
     }
     // If s moved the most, we don't store it: q and r are already correct.
     return HexCoord(rq, rr)
-}
-
-/** Is the point inside the triangle? It is if it's on the same side of all three edges. */
-private fun isInsideTriangle(p: Point, triangle: List<Point>): Boolean {
-    val (a, b, c) = triangle
-    fun side(from: Point, to: Point) = (to.x - from.x) * (p.y - from.y) - (to.y - from.y) * (p.x - from.x)
-    val s1 = side(a, b)
-    val s2 = side(b, c)
-    val s3 = side(c, a)
-    val hasNegative = s1 < 0 || s2 < 0 || s3 < 0
-    val hasPositive = s1 > 0 || s2 > 0 || s3 > 0
-    return !(hasNegative && hasPositive)
 }

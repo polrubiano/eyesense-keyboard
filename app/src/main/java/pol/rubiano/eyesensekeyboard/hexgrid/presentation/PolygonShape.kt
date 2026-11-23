@@ -15,7 +15,7 @@ import kotlin.math.min
  *
  * The vertices are **normalised** (0..1 within the element's box), so the shape scales
  * with the element. It's what lets you use `background(color, shape)` or
- * `border(..., shape)` with hexagons and triangles just like with `CircleShape`.
+ * `border(..., shape)` with hexagons and corner keys just like with `CircleShape`.
  *
  * [cornerRadius] is in **pixels**, not normalised: a corner must look equally round
  * whatever the box's proportions.

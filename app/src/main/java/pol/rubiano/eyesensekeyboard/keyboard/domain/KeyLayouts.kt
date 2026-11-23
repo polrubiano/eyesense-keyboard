@@ -41,8 +41,8 @@ data class CharacterLayout(
 }
 
 /**
- * Triangle layout: **functions only**. The value type ([KeyAction], not [KeyAssignment])
- * makes it impossible to put a character in a triangle: the compiler doesn't allow it.
+ * Corner key layout: **functions only**. The value type ([KeyAction], not [KeyAssignment])
+ * makes it impossible to put a character in a corner key: the compiler doesn't allow it.
  */
 data class FunctionLayout(
     val id: LayoutId,

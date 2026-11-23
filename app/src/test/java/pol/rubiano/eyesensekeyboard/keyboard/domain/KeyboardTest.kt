@@ -21,7 +21,7 @@ class KeyboardTest {
     }
 
     @Test
-    fun `a triangle resolves to the function layout`() {
+    fun `a corner key resolves to the function layout`() {
         assertEquals(
             KeyAssignment.Function(KeyAction.DeleteCharacter),
             keyboard.keyAt(PanelSlot.Corner(CornerPosition.TOP_RIGHT)),

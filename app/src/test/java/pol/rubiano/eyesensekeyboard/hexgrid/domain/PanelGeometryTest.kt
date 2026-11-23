@@ -56,40 +56,4 @@ class PanelGeometryTest {
         assertEquals(0f, geometry.center(HexCoord(0, -2)).y - r, tolerance)                   // top
         assertEquals(geometry.height, geometry.center(HexCoord(0, 2)).y + r, tolerance)       // bottom
     }
-
-    @Test
-    fun `the top-left triangle is pinned to the top-left corner and its point aims at the E row`() {
-        val (corner, onTopEdge, tip) = geometry.triangle(CornerPosition.TOP_LEFT)
-        assertPoint(Point(0f, 0f), corner)
-        assertEquals(0f, onTopEdge.y, tolerance)
-        assertEquals(0f, tip.x, tolerance)
-        assertEquals(geometry.height / 2 - geometry.hexRadius / 2, tip.y, tolerance)
-    }
-
-    @Test
-    fun `the long side of the triangle touches the outer vertex of each row`() {
-        val (_, a, b) = geometry.triangle(CornerPosition.TOP_LEFT)
-        // First hexagon of rows 0, -1 and -2; vertex 4 = top-left.
-        val outerVertices = listOf(HexCoord(-3, 0), HexCoord(-2, -1), HexCoord(-1, -2))
-            .map { geometry.hexCorners(it)[4] }
-
-        outerVertices.forEach { p ->
-            // Cross product ≈ 0 ⇔ the point is on the line a-b.
-            val cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)
-            assertEquals(0f, cross, 1f)
-        }
-    }
-
-    @Test
-    fun `the 4 triangles are mirror images of each other`() {
-        val tl = geometry.triangle(CornerPosition.TOP_LEFT)
-        val tr = geometry.triangle(CornerPosition.TOP_RIGHT)
-        val bl = geometry.triangle(CornerPosition.BOTTOM_LEFT)
-        val br = geometry.triangle(CornerPosition.BOTTOM_RIGHT)
-        tl.indices.forEach { i ->
-            assertPoint(Point(geometry.width - tl[i].x, tl[i].y), tr[i])
-            assertPoint(Point(tl[i].x, geometry.height - tl[i].y), bl[i])
-            assertPoint(Point(geometry.width - tl[i].x, geometry.height - tl[i].y), br[i])
-        }
-    }
 }

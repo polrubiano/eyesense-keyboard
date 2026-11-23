@@ -23,7 +23,7 @@ data class Keyboard(
 
     /**
      * What's in a slot. It follows the same structure as [PanelSlot]:
-     * hexagon → character layout, triangle → function layout.
+     * hexagon → character layout, corner key → function layout.
      * Null if the slot is free.
      */
     fun keyAt(slot: PanelSlot): KeyAssignment? = when (slot) {

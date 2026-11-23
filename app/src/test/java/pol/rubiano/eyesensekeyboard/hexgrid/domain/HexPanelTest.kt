@@ -37,9 +37,47 @@ class HexPanelTest {
     }
 
     @Test
-    fun `33 slots in total - 29 hexagons and 4 different triangles`() {
+    fun `33 slots in total - 29 hexagons and 4 different corner keys`() {
         assertEquals(33, panel.slots.size)
         assertEquals(CornerPosition.entries.toSet(), panel.corners.map { it.position }.toSet())
+    }
+
+    @Test
+    fun `the top-right corner is the whole missing cell plus the half one below it`() {
+        assertEquals(setOf(HexCoord(4, -2), HexCoord(4, -1)), panel.cornerCells[CornerPosition.TOP_RIGHT])
+    }
+
+    @Test
+    fun `the 4 corners are mirror images of each other`() {
+        // Mirroring left↔right turns (q, r) into (-q - r, r); top↔bottom turns it into (q + r, -r).
+        val topRight = panel.cornerCells.getValue(CornerPosition.TOP_RIGHT)
+        val topLeft = panel.cornerCells.getValue(CornerPosition.TOP_LEFT)
+        val bottomRight = panel.cornerCells.getValue(CornerPosition.BOTTOM_RIGHT)
+        val bottomLeft = panel.cornerCells.getValue(CornerPosition.BOTTOM_LEFT)
+        assertEquals(topLeft, topRight.map { HexCoord(-it.q - it.r, it.r) }.toSet())
+        assertEquals(bottomRight, topRight.map { HexCoord(it.q + it.r, -it.r) }.toSet())
+        assertEquals(bottomLeft, topRight.map { HexCoord(-it.q, -it.r) }.toSet())
+    }
+
+    @Test
+    fun `corner cells never overlap the panel or each other`() {
+        val all = panel.cornerCells.values.flatten()
+        assertEquals(all.size, all.toSet().size)
+        assertTrue(all.none { it in panel })
+    }
+
+    @Test
+    fun `every cell knows its owner`() {
+        assertEquals(PanelSlot.Cell(HexCoord.ORIGIN), panel.slotOf(HexCoord.ORIGIN))
+        assertEquals(PanelSlot.Corner(CornerPosition.TOP_RIGHT), panel.slotOf(HexCoord(4, -1)))
+        assertEquals(null, panel.slotOf(HexCoord(0, -3))) // above the panel: nobody's
+    }
+
+    @Test
+    fun `a bigger panel grows bigger corners`() {
+        val big = HexPanel(rowsAroundCenter = 3, rings = 4)
+        // Rows -1, -2 and -3 each leave cells at the right end.
+        assertEquals(setOf(-1, -2, -3), big.cornerCells.getValue(CornerPosition.TOP_RIGHT).map { it.r }.toSet())
     }
 
     @Test

@@ -7,7 +7,7 @@ import pol.rubiano.eyesensekeyboard.hexgrid.domain.HexPanel
 /** The layouts that ship with the app. */
 object Presets {
 
-    /** The EyeSense keyboard silhouette: rows of 5-6-7-6-5 (29 hexagons) + 4 triangles. */
+    /** The EyeSense keyboard silhouette: rows of 5-6-7-6-5 (29 hexagons) + 4 corner keys. */
     val PANEL = HexPanel(rowsAroundCenter = 2, rings = 3)
 
     /**

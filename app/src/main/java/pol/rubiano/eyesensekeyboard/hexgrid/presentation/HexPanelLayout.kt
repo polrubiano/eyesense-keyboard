@@ -34,13 +34,13 @@ import kotlin.math.roundToInt
  */
 @Stable
 interface HexSlotScope {
-    /** The slot's outline (hexagon or triangle), ready for `background`, `border` or `clip`. */
+    /** The slot's outline (hexagon or corner key), ready for `background`, `border` or `clip`. */
     val shape: Shape
 
-    /** Diameter of the inscribed circle: the space a label has without spilling out. */
+    /** Diameter of the label circle (one hexagon's inscribed circle): the space a label has without spilling out. */
     val labelAreaSize: Dp
 
-    /** Places the element with its centre on the slot's optical centre (the incenter). */
+    /** Places the element with its centre on the slot's label centre. */
     fun Modifier.alignToSlotCenter(): Modifier
 }
 
@@ -55,8 +55,8 @@ interface HexSlotScope {
  *   so the panel looks equally round on any screen. Also visual only: touch zones keep
  *   their sharp corners and still tile the panel with no dead zones.
  * - [onSlotClick] gets the slot that was tapped. Touch is detected **once, for the whole
- *   panel**, and resolved with geometry ([slotAt]): the zones are exactly hexagonal and
- *   triangular, with no overlaps or gaps, even though the slot boxes overlap.
+ *   panel**, and resolved with geometry ([slotAt]): the zones follow the honeycomb exactly,
+ *   with no overlaps or gaps, even though the slot boxes overlap.
  */
 @Composable
 fun HexPanelLayout(
@@ -125,8 +125,8 @@ private fun SlotBox(
                 normalizedVertices = outline.vertices.map { Point((it.x - left) / boxWidth, (it.y - top) / boxHeight) },
                 cornerRadius = cornerRadius,
             ),
-            labelAreaSize = with(density) { (outline.inradius * 2f).toDp() },
-            labelCenter = Point(outline.incenter.x - left, outline.incenter.y - top),
+            labelAreaSize = with(density) { (outline.labelRadius * 2f).toDp() },
+            labelCenter = Point(outline.labelCenter.x - left, outline.labelCenter.y - top),
         )
     }
 

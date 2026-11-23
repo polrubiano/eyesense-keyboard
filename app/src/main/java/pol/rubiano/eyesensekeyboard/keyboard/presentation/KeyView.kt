@@ -47,7 +47,7 @@ fun KeyAction.description(): Int = when (this) {
 }
 
 /**
- * Draws one key inside its slot (hexagon or triangle). [key] is null for a free slot,
+ * Draws one key inside its slot (hexagon or corner key). [key] is null for a free slot,
  * which is drawn as an outline only.
  *
  * Text keys show their [label]; function keys show their [icon], at the same relative size.
