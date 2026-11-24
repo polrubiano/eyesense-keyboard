@@ -44,7 +44,7 @@ The keyboard comes from [EyeSense](https://github.com/polrubiano/eyesense). Its 
 ## Roadmap
 
 - [x] Hexagonal panel: model, geometry, rendering and touch
-- [ ] Functional keyboard: key model and real text input *(in progress: typing, delete and clear work)*
+- [ ] Functional keyboard: key model and real text input *(in progress: typing, delete, clear and emotion work)*
 - [ ] Measure the new layout's eye travel with letter-metter and compare it with the original
 - [ ] Live camera background
 - [ ] Customisable key layout, persisted between sessions
