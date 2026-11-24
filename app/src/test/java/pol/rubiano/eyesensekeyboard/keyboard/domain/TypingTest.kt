@@ -37,8 +37,18 @@ class TypingTest {
     }
 
     @Test
+    fun `clear text wipes everything written`() {
+        assertEquals("", "hola ¿qué tal?".typed(KeyAssignment.Function(KeyAction.ClearText)))
+    }
+
+    @Test
+    fun `clear text on an empty text does nothing`() {
+        assertEquals("", "".typed(KeyAssignment.Function(KeyAction.ClearText)))
+    }
+
+    @Test
     fun `functions without behaviour don't change the text yet`() {
-        (KeyAction.all - KeyAction.DeleteCharacter).forEach { action ->
+        (KeyAction.all - KeyAction.DeleteCharacter - KeyAction.ClearText).forEach { action ->
             assertEquals("hola", "hola".typed(KeyAssignment.Function(action)))
         }
     }
