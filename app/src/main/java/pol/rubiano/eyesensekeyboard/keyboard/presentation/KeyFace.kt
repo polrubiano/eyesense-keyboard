@@ -41,6 +41,7 @@ data class KeyFace(val content: Content, val style: Style) {
  *   the icon is centred by its geometry.
  * - Any other text → uppercase glyph + character style (letters are stored in lowercase).
  * - Function → its icon + action style.
+ * - Choice → its option's pictogram (an emoji) + action style; "none" → [NONE_PICTOGRAM].
  */
 fun KeyAssignment.face(): KeyFace = when (this) {
     is KeyAssignment.Text ->
@@ -51,7 +52,13 @@ fun KeyAssignment.face(): KeyFace = when (this) {
         }
     is KeyAssignment.Function ->
         KeyFace(KeyFace.Content.Icon(action.icon(), action.description()), KeyFace.Style.ACTION)
+    // Every option brings its own pictogram; "none" isn't an option, so the UI gives it one.
+    is KeyAssignment.Choice ->
+        KeyFace(KeyFace.Content.Glyph(option?.pictogram ?: NONE_PICTOGRAM), KeyFace.Style.ACTION)
 }
+
+/** The centre of every menu: "none", which removes the menu's value. */
+private const val NONE_PICTOGRAM = "🚫"
 
 /**
  * The icon a function key shows. It's a silhouette: its colour comes from the theme
