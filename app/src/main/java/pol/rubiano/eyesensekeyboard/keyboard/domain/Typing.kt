@@ -7,6 +7,7 @@ package pol.rubiano.eyesensekeyboard.keyboard.domain
  * - [KeyAssignment.Function] → depends on the action. The inner `when` lists every
  *   [KeyAction] with no `else` on purpose: adding a new action breaks the build here
  *   until you decide what it does to the text.
+ * - [KeyAssignment.Choice] → no change: picking a menu option isn't writing.
  * - `null` (free slot) → no change.
  *
  * It's a pure function: same input, same output, no Android involved. That's why the
@@ -23,5 +24,7 @@ fun String.typed(key: KeyAssignment?): String = when (key) {
         KeyAction.Speak,
         KeyAction.SelectEmotion -> this
     }
+    // Picking an option doesn't write: the ViewModel stores it and closes the menu.
+    is KeyAssignment.Choice -> this
     null -> this
 }

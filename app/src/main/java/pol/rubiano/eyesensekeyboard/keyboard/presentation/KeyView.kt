@@ -10,7 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -19,18 +18,19 @@ import pol.rubiano.eyesensekeyboard.hexgrid.presentation.HexSlotScope
 import pol.rubiano.eyesensekeyboard.keyboard.domain.KeyAssignment
 
 /**
- * Draws one key inside its slot. [key] is null for a free slot, which is drawn as an
- * outline only. What it shows and how it looks come from its [face]: this function only
- * turns the face into Compose.
+ * Draws one key inside its slot. [key] is null for a free slot, which draws nothing at all:
+ * neither fill nor outline. That's how an open menu "hides" the rest of the keyboard.
+ * What a key shows and how it looks come from its [face]: this function only turns the
+ * face into Compose.
  *
  * Glyphs and icons take the same share of the label area, so they look balanced.
  */
 @Composable
 fun HexSlotScope.KeyView(key: KeyAssignment?) {
+    if (key == null) return
     val colors = MaterialTheme.colorScheme
-    val face = key?.face()
-    val (fill, onFill) = when (face?.style) {
-        null -> Color.Transparent to Color.Transparent
+    val face = key.face()
+    val (fill, onFill) = when (face.style) {
         KeyFace.Style.CHARACTER -> colors.surfaceVariant to colors.onSurfaceVariant
         KeyFace.Style.ACTION -> colors.primaryContainer to colors.onPrimaryContainer
     }
@@ -41,7 +41,7 @@ fun HexSlotScope.KeyView(key: KeyAssignment?) {
             .border(1.dp, colors.outline, shape)
     )
     val contentSize = labelAreaSize * 0.45f
-    when (val content = face?.content) {
+    when (val content = face.content) {
         is KeyFace.Content.Glyph -> Text(
             text = content.text,
             modifier = Modifier.alignToSlotCenter(),
@@ -56,6 +56,5 @@ fun HexSlotScope.KeyView(key: KeyAssignment?) {
                 .size(contentSize),
             tint = onFill,
         )
-        null -> Unit
     }
 }

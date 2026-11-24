@@ -31,7 +31,7 @@ fun KeyboardScreen(
     viewModel: KeyboardViewModel = viewModel(),
 ) {
     val text by viewModel.text.collectAsStateWithLifecycle()
-    val keyboard = viewModel.keyboard
+    val keyboard by viewModel.keyboard.collectAsStateWithLifecycle()
 
     Column(modifier.fillMaxSize()) {
         Box(

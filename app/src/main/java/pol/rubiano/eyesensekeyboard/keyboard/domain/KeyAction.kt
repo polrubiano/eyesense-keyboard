@@ -18,9 +18,10 @@ package pol.rubiano.eyesensekeyboard.keyboard.domain
  *    - `description()`: add the text TalkBack reads to `strings.xml`.
  * 3. **What it does to the text**: [typed] in `Typing.kt` (compiler error). If it doesn't
  *    touch the text (voice, UI…), leave it next to the actions that return `this`.
- * 4. **Tests**: in `TypingTest`, a test for its effect, and take it out of
+ * 4. **Does it open a menu?**: `menu()` in `Menu.kt` (compiler error). Most actions don't: `null`.
+ * 5. **Tests**: in `TypingTest`, a test for its effect, and take it out of
  *    `functions without behaviour don't change the text yet`.
- * 5. **Tests that assume corners are inert**: `KeyboardViewModelTest` checks that the
+ * 6. **Tests that assume corners are inert**: `KeyboardViewModelTest` checks that the
  *    corners without behaviour don't change the text. Exclude the new one there and test
  *    it through its corner (no compiler error here: it shows up as a failing test).
  *

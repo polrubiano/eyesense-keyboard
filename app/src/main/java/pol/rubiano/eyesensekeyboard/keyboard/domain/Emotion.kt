@@ -8,11 +8,14 @@ package pol.rubiano.eyesensekeyboard.keyboard.domain
  * detection will be able to fill in this same value.
  *
  * [id] is stable because it's a value that will be sent to other systems.
+ *
+ * It's an [Option]: the user picks it from [Menu.Emotions]. "No emotion" is `null`,
+ * not a value of the enum, because "none" isn't an emotion to send anywhere.
  */
-enum class Emotion(val id: String) {
-    HAPPY("happy"),
-    ANGRY("angry"),
-    SAD("sad"),
+enum class Emotion(val id: String, override val pictogram: String) : Option {
+    HAPPY("happy", "😊"),
+    ANGRY("angry", "😠"),
+    SAD("sad", "😢"),
     ;
 
     companion object {
