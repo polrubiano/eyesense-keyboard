@@ -113,10 +113,7 @@ fun PanelGeometry.slotAt(point: Point): PanelSlot? {
 
     panel.slotOf(pixelToHex(point))?.let { return it }
 
-    val nearest = panel.ownedCells.minBy { cell ->
-        val c = center(cell)
-        (c.x - point.x) * (c.x - point.x) + (c.y - point.y) * (c.y - point.y)
-    }
+    val nearest = panel.ownedCells.minBy { center(it).distanceTo(point) }
     return panel.slotOf(nearest)
 }
 
