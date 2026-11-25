@@ -39,6 +39,9 @@ class PanelGeometry(val panel: HexPanel, val hexRadius: Float) {
     /** Width of a hexagon, and horizontal distance between neighbours in the same row. */
     val hexWidth: Float = SQRT3 * hexRadius
 
+    /** From the centre to the middle of a side: the radius of the largest circle inside a hexagon. */
+    val inradius: Float = hexWidth / 2f
+
     /** Vertical distance between the centres of two consecutive rows. */
     val rowHeight: Float = 1.5f * hexRadius
 

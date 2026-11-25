@@ -64,6 +64,13 @@ class PanelGeometryTest {
         assertEquals(geometry.height, geometry.center(HexCoord(0, 2)).y + r, tolerance)       // bottom
     }
 
+    @Test
+    fun `the inradius reaches exactly the middle of a side`() {
+        val corners = geometry.hexCorners(HexCoord.ORIGIN)
+        val middleOfSide = corners[0] + (corners[1] - corners[0]) * 0.5f
+        assertEquals(geometry.inradius, geometry.center(HexCoord.ORIGIN).distanceTo(middleOfSide), tolerance)
+    }
+
     // --- pixel → slot (hit test) ---
 
     @Test

@@ -88,8 +88,8 @@ data class HexPanel(
      * ```
      *
      * "Peeking in", in whole numbers: a cell's centre is `q + r/2` hexagon widths from the
-     * middle, and the rectangle reaches `rings + 1/2`. Doubling both:
-     * `|2q + r| ≤ 2·rings + 1`. The sign of `2q + r` says left or right.
+     * middle, and the rectangle reaches `rings + 1/2`. Doubling both ([HexCoord.doubledColumn]):
+     * `|doubledColumn| ≤ 2·rings + 1`. Its sign says left or right.
      */
     val cornerCells: Map<CornerPosition, Set<HexCoord>> = CornerPosition.entries.associateWith { position ->
         val limit = 2 * rings + 1
@@ -97,8 +97,8 @@ data class HexPanel(
             val r = if (position.isTop) -distance else distance
             (-limit..limit)
                 .map { q -> HexCoord(q, r) }
-                .filter { it !in cellSet && abs(2 * it.q + it.r) <= limit }
-                .filter { (2 * it.q + it.r < 0) == position.isLeft }
+                .filter { it !in cellSet && abs(it.doubledColumn) <= limit }
+                .filter { (it.doubledColumn < 0) == position.isLeft }
         }.toSet()
     }
 
