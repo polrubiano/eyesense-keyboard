@@ -44,11 +44,15 @@ sealed interface KeyAssignment {
  * 3. **What it does to the text**: [typed] in `Writing.kt` (compiler error). If it doesn't
  *    touch the text (voice, UI…), leave it next to the actions that return `this`.
  * 4. **Does it open a menu?**: `menu()` in `Menu.kt` (compiler error). Most actions don't: `null`.
- * 5. **Tests**: in `WritingTest`, a test for its effect, and take it out of
- *    `functions without behaviour don't change the text yet`.
- * 6. **Tests that assume corners are inert**: `KeyboardViewModelTest` checks that the
- *    corners without behaviour don't change the text. Exclude the new one there and test
- *    it through its corner (no compiler error here: it shows up as a failing test).
+ *    [pressed] already opens and closes it.
+ * 5. **Does it change any other state?** (no compiler error): add the value to `Writing`
+ *    and give the action its own branch in [pressed]. It stays pure: state in, state out.
+ * 6. **Does it act on the outside world?** (sound, network…; no compiler error): that's a
+ *    side effect, not state. It goes in `KeyboardViewModel.onSlotClick`, after [pressed],
+ *    never in the domain.
+ * 7. **Tests**: in `WritingTest`, a test for what it does to the state, and take it out of
+ *    `functions without behaviour don't change the text yet`. A side effect is tested in
+ *    `KeyboardViewModelTest`.
  *
  * Optional: put it in a corner by default in `Presets.DEFAULT_FUNCTIONS`.
  *
