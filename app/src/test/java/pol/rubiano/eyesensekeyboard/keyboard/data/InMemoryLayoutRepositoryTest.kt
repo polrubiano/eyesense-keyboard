@@ -1,4 +1,4 @@
-package pol.rubiano.eyesensekeyboard.keyboard.domain
+package pol.rubiano.eyesensekeyboard.keyboard.data
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -6,8 +6,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import pol.rubiano.eyesensekeyboard.hexgrid.domain.HexCoord
+import pol.rubiano.eyesensekeyboard.keyboard.domain.KeyAssignment
+import pol.rubiano.eyesensekeyboard.keyboard.domain.LayoutId
+import pol.rubiano.eyesensekeyboard.keyboard.domain.LayoutOrigin
+import pol.rubiano.eyesensekeyboard.keyboard.domain.Presets
 
-class LayoutRepositoryTest {
+class InMemoryLayoutRepositoryTest {
 
     private val repository = InMemoryLayoutRepository()
 
