@@ -71,4 +71,11 @@ class MenuTest {
     fun `the keyboard it came from doesn't change`() {
         assertEquals(KeyAssignment.Text("e"), keyboard.keyAt(PanelSlot.Cell(HexCoord.ORIGIN)))
     }
+
+    @Test
+    fun `emotions have unique, stable and recoverable ids`() {
+        val ids = Emotion.entries.map { it.id }
+        assertEquals(listOf("happy", "angry", "sad"), ids)
+        Emotion.entries.forEach { assertEquals(it, Emotion.fromId(it.id)) }
+    }
 }

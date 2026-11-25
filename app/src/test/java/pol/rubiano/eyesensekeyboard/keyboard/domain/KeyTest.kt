@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-class KeyContentTest {
+class KeyTest {
 
     @Test
     fun `function ids are unique`() {
@@ -47,12 +47,5 @@ class KeyContentTest {
     @Test
     fun `a text key accepts a letter, the space or a whole phrase`() {
         listOf("e", " ", "¿qué tal?").forEach { assertEquals(it, KeyAssignment.Text(it).value) }
-    }
-
-    @Test
-    fun `emotions have unique, stable and recoverable ids`() {
-        val ids = Emotion.entries.map { it.id }
-        assertEquals(listOf("happy", "angry", "sad"), ids)
-        Emotion.entries.forEach { assertEquals(it, Emotion.fromId(it.id)) }
     }
 }

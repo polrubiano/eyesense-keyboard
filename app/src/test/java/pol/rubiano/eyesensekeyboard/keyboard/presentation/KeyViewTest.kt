@@ -6,7 +6,7 @@ import pol.rubiano.eyesensekeyboard.R
 import pol.rubiano.eyesensekeyboard.keyboard.domain.KeyAction
 import pol.rubiano.eyesensekeyboard.keyboard.domain.KeyAssignment
 
-class KeyFaceTest {
+class KeyViewTest {
 
     @Test
     fun `a letter shows in uppercase with the character style`() {

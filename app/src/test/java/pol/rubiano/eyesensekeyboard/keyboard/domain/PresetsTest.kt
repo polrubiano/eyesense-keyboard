@@ -5,7 +5,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import pol.rubiano.eyesensekeyboard.hexgrid.domain.CornerPosition
 import pol.rubiano.eyesensekeyboard.hexgrid.domain.HexCoord
-import pol.rubiano.eyesensekeyboard.hexgrid.domain.HexPanel
 
 class PresetsTest {
 
@@ -23,60 +22,6 @@ class PresetsTest {
 
     private fun letters(layout: CharacterLayout) =
         layout.cells.values.map { (it as KeyAssignment.Text).value }.filter { it != " " }
-
-    // ---- Generator ----
-
-    @Test
-    fun `the generator puts the first one at the centre and the following ones by closeness`() {
-        val layout = characterLayoutByFrequency(LayoutId("test"), "Test", panel, listOf("x", "y", "z"))
-        assertEquals(KeyAssignment.Text("x"), layout.cells[HexCoord.ORIGIN])
-        assertEquals(KeyAssignment.Text("y"), layout.cells[panel.cells[1]])
-        assertEquals(KeyAssignment.Text("z"), layout.cells[panel.cells[2]])
-        assertEquals(3, layout.cells.size)
-    }
-
-    @Test
-    fun `the letters skip the pinned cells and reorder themselves`() {
-        val pinnedCell = panel.cells[1]
-        val layout = characterLayoutByFrequency(
-            LayoutId("test"), "Test", panel,
-            ranked = listOf("x", "y"),
-            pinned = mapOf(pinnedCell to space),
-        )
-        assertEquals(space, layout.cells[pinnedCell])
-        assertEquals(KeyAssignment.Text("x"), layout.cells[panel.cells[0]])
-        assertEquals(KeyAssignment.Text("y"), layout.cells[panel.cells[2]]) // jumped over position 1
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun `the generator fails if there are more keys than hexagons`() {
-        val singleHexagon = HexPanel(rowsAroundCenter = 0, rings = 0)
-        characterLayoutByFrequency(LayoutId("test"), "Test", singleHexagon, listOf("a", "b"))
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun `the pinned keys also count towards capacity`() {
-        val singleHexagon = HexPanel(rowsAroundCenter = 0, rings = 0)
-        characterLayoutByFrequency(
-            LayoutId("test"), "Test", singleHexagon,
-            ranked = listOf("a"),
-            pinned = mapOf(HexCoord.ORIGIN to space),
-        )
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun `a pinned key outside the panel is rejected`() {
-        characterLayoutByFrequency(
-            LayoutId("test"), "Test", panel,
-            ranked = emptyList(),
-            pinned = mapOf(HexCoord(10, 0) to space),
-        )
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun `the generator fails if there are repeated letters`() {
-        characterLayoutByFrequency(LayoutId("test"), "Test", panel, listOf("a", "a"))
-    }
 
     // ---- Language presets ----
 

@@ -38,13 +38,13 @@ sealed interface KeyAssignment {
  * compiler error is a breadcrumb:
  *
  * 1. **Here**: add a `data object` with a new, unique [id], and add it to [all].
- * 2. **What the key shows**: in `presentation/KeyFace.kt` (compiler errors):
+ * 2. **What the key shows**: in `presentation/KeyView.kt` (compiler errors):
  *    - `icon()`: create the drawable first (File > New > Vector Asset, 24 dp).
  *    - `description()`: add the text TalkBack reads to `strings.xml`.
  * 3. **What it does to the text**: [typed] in `Writing.kt` (compiler error). If it doesn't
  *    touch the text (voice, UI…), leave it next to the actions that return `this`.
  * 4. **Does it open a menu?**: `menu()` in `Menu.kt` (compiler error). Most actions don't: `null`.
- * 5. **Tests**: in `TypingTest`, a test for its effect, and take it out of
+ * 5. **Tests**: in `WritingTest`, a test for its effect, and take it out of
  *    `functions without behaviour don't change the text yet`.
  * 6. **Tests that assume corners are inert**: `KeyboardViewModelTest` checks that the
  *    corners without behaviour don't change the text. Exclude the new one there and test

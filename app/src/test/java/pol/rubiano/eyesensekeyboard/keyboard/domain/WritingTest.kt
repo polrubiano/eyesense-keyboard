@@ -3,7 +3,7 @@ package pol.rubiano.eyesensekeyboard.keyboard.domain
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class TypingTest {
+class WritingTest {
 
     @Test
     fun `a letter goes at the end`() {
