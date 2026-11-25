@@ -1,6 +1,7 @@
 package pol.rubiano.eyesensekeyboard.hexgrid.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
@@ -78,6 +79,45 @@ class SlotOutlineTest {
                 val b = v[(i + 1) % v.size]
                 assertEquals(5f, distanceToLine(shrunk.vertices[i], a, b), tolerance)
             }
+        }
+    }
+
+    // --- ① regionOutline ---
+
+    @Test
+    fun `one cell's outline is its own hexagon`() {
+        val outline = geometry.regionOutline(setOf(HexCoord.ORIGIN))
+        val corners = geometry.hexCorners(HexCoord.ORIGIN)
+        assertEquals(6, outline.size)
+        corners.forEach { corner ->
+            assertTrue("Missing corner $corner", outline.any { hypot(it.x - corner.x, it.y - corner.y) < tolerance })
+        }
+    }
+
+    @Test
+    fun `two neighbours lose their shared wall`() {
+        val outline = geometry.regionOutline(setOf(HexCoord.ORIGIN, HexCoord(1, 0)))
+        assertEquals(10, outline.size) // 6 + 6 sides, minus the shared one counted twice
+        assertEquals(2 * hexArea, outline.signedArea(), 0.5f)
+    }
+
+    @Test
+    fun `the outline goes clockwise on screen`() {
+        val outline = geometry.regionOutline(setOf(HexCoord.ORIGIN, HexCoord(0, 1), HexCoord(1, 0)))
+        assertTrue(outline.signedArea() > 0f)
+    }
+
+    @Test
+    fun `cells that don't touch are not a single piece`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            geometry.regionOutline(setOf(HexCoord.ORIGIN, HexCoord(2, 0)))
+        }
+    }
+
+    @Test
+    fun `a ring with a hole in the middle is rejected`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            geometry.regionOutline(HexCoord.ORIGIN.neighbors().toSet())
         }
     }
 }

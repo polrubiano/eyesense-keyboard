@@ -2,62 +2,18 @@ package pol.rubiano.eyesensekeyboard.hexgrid.domain
 
 import kotlin.math.abs
 import kotlin.math.hypot
-import kotlin.math.roundToLong
 
 /*
- * Outlines of shapes made of several cells: a key that spans more than one hexagon.
- *
- * Three steps, each a pure function on a list of vertices (a polygon):
- *   ① regionOutline   join the cells into one outline
- *   ② clippedToPanel  cut away whatever sticks out of the panel
- *   ③ insetBy         move every side inwards (the visual gap between keys)
+ * Operations on polygons. A polygon is a list of vertices; nothing here knows about hexagons.
  *
  * Every polygon here goes **clockwise on screen** (Y grows downward), like hexCorners().
  */
 
+/** A point in pixels. Its own type so the domain doesn't depend on Compose. */
+data class Point(val x: Float, val y: Float)
+
 /** Below this many pixels, two points are the same point. */
-private const val EPSILON = 1e-3f
-
-/**
- * ① The outline of a group of cells, as if they were a single piece.
- *
- * Each hexagon has 6 sides. A side stays only if the cell on the other side is NOT in the
- * group; otherwise it's an inner wall and goes away. Side `i` (from vertex `i` to `i + 1`)
- * faces exactly [HexCoord.DIRECTIONS]`[i]`, so the check uses whole-number coordinates only.
- *
- * The remaining sides are then chained: where one ends, the next one begins.
- *
- * The group must be a single piece with no holes: a key with a hole in it makes no sense.
- */
-fun PanelGeometry.regionOutline(cells: Set<HexCoord>): List<Point> {
-    require(cells.isNotEmpty()) { "A region needs at least one cell" }
-
-    // Outer sides, indexed by where they start.
-    val sides = HashMap<Long, Pair<Point, Point>>()
-    cells.forEach { cell ->
-        val corners = hexCorners(cell)
-        HexCoord.DIRECTIONS.forEachIndexed { i, direction ->
-            if (cell + direction !in cells) {
-                val start = corners[i]
-                sides[keyOf(start)] = start to corners[(i + 1) % 6]
-            }
-        }
-    }
-
-    // Walk round from any side until we're back at the start.
-    val outline = mutableListOf<Point>()
-    val start = sides.values.first()
-    var side = start
-    do {
-        outline += side.first
-        side = sides[keyOf(side.second)] ?: error("Broken outline: $cells")
-    } while (side !== start)
-
-    // A single loop must use every outer side. If some are left over, there's a second
-    // loop: another piece, or the edge of a hole.
-    require(outline.size == sides.size) { "The cells must form a single piece with no holes: $cells" }
-    return outline
-}
+internal const val EPSILON = 1e-3f
 
 /**
  * ② The polygon cut to the panel's rectangle (0..[PanelGeometry.width] × 0..[PanelGeometry.height]).
@@ -108,13 +64,6 @@ fun List<Point>.signedArea(): Float =
     }.toFloat() / 2f
 
 // --- Helpers ---------------------------------------------------------------------------
-
-/** Points that are the same within [EPSILON] get the same key, despite float noise. */
-private fun keyOf(p: Point): Long {
-    val x = (p.x / EPSILON).roundToLong()
-    val y = (p.y / EPSILON).roundToLong()
-    return x * 1_000_003L + y
-}
 
 /** One scissors cut of Sutherland–Hodgman: keeps the part where [inside] holds. */
 private fun List<Point>.clip(inside: (Point) -> Boolean, crossing: (Point, Point) -> Point): List<Point> {
