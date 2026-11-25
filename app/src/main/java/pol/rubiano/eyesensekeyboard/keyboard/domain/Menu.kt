@@ -54,3 +54,45 @@ fun Keyboard.showing(menu: Menu): Keyboard {
         FunctionLayout(id, menu.toString(), LayoutOrigin.PRESET, functions.corners.filterValues { it == menu.opener }),
     )
 }
+
+/**
+ * Something that can be picked in a [Menu]. A key holds it through [KeyAssignment.Choice].
+ *
+ * It's `sealed` on purpose: whoever stores the picked option uses a `when` with no `else`,
+ * so adding a new kind of option (e.g. a language) breaks the build there until you
+ * decide where it gets stored.
+ *
+ * A sealed interface can only be implemented in its own package, and that's fine: the
+ * options are domain values, like [Emotion].
+ */
+sealed interface Option {
+    /**
+     * What its key shows: an emoji. It belongs to the option, not to the UI, because
+     * future options (whole phrases the user creates) will be data, and their pictogram
+     * gets saved with them. An emoji is text, so it needs no drawable, and TalkBack reads it.
+     */
+    val pictogram: String
+}
+
+/**
+ * Emotion attached to the message. It is **context, not text**: it isn't written into the field,
+ * it travels alongside the message (in the future, together with the prompt sent to the AI).
+ *
+ * Today the user picks it with [KeyAction.SelectEmotion]; later EyeSense's real-time
+ * detection will be able to fill in this same value.
+ *
+ * [id] is stable because it's a value that will be sent to other systems.
+ *
+ * It's an [Option]: the user picks it from [Menu.Emotions]. "No emotion" is `null`,
+ * not a value of the enum, because "none" isn't an emotion to send anywhere.
+ */
+enum class Emotion(val id: String, override val pictogram: String) : Option {
+    HAPPY("happy", "😊"),
+    ANGRY("angry", "😠"),
+    SAD("sad", "😢"),
+    ;
+
+    companion object {
+        fun fromId(id: String): Emotion? = entries.firstOrNull { it.id == id }
+    }
+}
