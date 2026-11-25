@@ -55,20 +55,20 @@ data class HexPanel(
     private val groupOf: Map<HexCoord, Set<HexCoord>> =
         merged.flatMap { group -> group.map { it to group } }.toMap()
 
+    /** The slot a hexagon of the panel belongs to: its merged group, or itself. */
+    private fun hexSlotOf(coord: HexCoord): PanelSlot =
+        groupOf[coord]?.let { PanelSlot.Merged(it) } ?: PanelSlot.Cell(coord)
+
     val corners: List<PanelSlot.Corner> = CornerPosition.entries.map { PanelSlot.Corner(it) }
 
     /**
      * Every slot: hexagons first (by closeness to the centre), then the corner keys.
-     * A merged group takes the place of its hexagon nearest to the centre.
+     *
+     * Every hexagon of a merged group gives the same slot, and `distinct()` keeps its first
+     * appearance. [cells] goes from the centre outwards, so a merged group takes the place
+     * of its hexagon nearest to the centre.
      */
-    val slots: List<PanelSlot> = cells.mapNotNull { coord ->
-        val group = groupOf[coord]
-        when {
-            group == null -> PanelSlot.Cell(coord)
-            coord == cells.first { it in group } -> PanelSlot.Merged(group)
-            else -> null // already represented by its group
-        }
-    } + corners
+    val slots: List<PanelSlot> = cells.map(::hexSlotOf).distinct() + corners
 
     /**
      * Rows that actually have hexagons above/below the centre. If [rings] is smaller than
@@ -107,7 +107,7 @@ data class HexPanel(
      * a corner cell to its corner.
      */
     private val owners: Map<HexCoord, PanelSlot> =
-        cells.associateWith { coord -> groupOf[coord]?.let { PanelSlot.Merged(it) } ?: PanelSlot.Cell(coord) } +
+        cells.associateWith(::hexSlotOf) +
             cornerCells.flatMap { (position, coords) -> coords.map { it to PanelSlot.Corner(position) } }
 
     /** Every cell that belongs to some slot. */

@@ -87,6 +87,12 @@ class HexPanelTest {
     }
 
     @Test
+    fun `a merged group takes the place of its hexagon nearest to the centre`() {
+        val nearest = withBar.cells.indexOfFirst { it in bar }
+        assertEquals(nearest, withBar.slots.indexOf(PanelSlot.Merged(bar)))
+    }
+
+    @Test
     fun `both merged hexagons belong to the same slot`() {
         bar.forEach { assertEquals(PanelSlot.Merged(bar), withBar.slotOf(it)) }
     }
