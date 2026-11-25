@@ -30,8 +30,8 @@ fun KeyboardScreen(
     modifier: Modifier = Modifier,
     viewModel: KeyboardViewModel = viewModel(),
 ) {
-    val text by viewModel.text.collectAsStateWithLifecycle()
-    val keyboard by viewModel.keyboard.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val keyboard = state.keyboard
 
     Column(modifier.fillMaxSize()) {
         Box(
@@ -41,7 +41,7 @@ fun KeyboardScreen(
                 .padding(horizontal = 12.dp),
             contentAlignment = Alignment.BottomCenter,
         ) {
-            MessageField(text)
+            MessageField(state.text)
         }
 
         HexPanelLayout(
