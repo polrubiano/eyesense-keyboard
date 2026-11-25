@@ -9,8 +9,41 @@ import kotlin.math.hypot
  * Every polygon here goes **clockwise on screen** (Y grows downward), like hexCorners().
  */
 
-/** A point in pixels. Its own type so the domain doesn't depend on Compose. */
-data class Point(val x: Float, val y: Float)
+/**
+ * A point in pixels. Its own type so the domain doesn't depend on Compose.
+ *
+ * It also works as the **path between two points**: `to - from` is "how far, and in which
+ * direction". That lets formulas read like the idea instead of coordinate by coordinate:
+ * ```
+ * from + (to - from) * 0.5f      the midpoint: leave `from` and go half the way to `to`
+ * ```
+ */
+data class Point(val x: Float, val y: Float) {
+
+    /** Moves this point along [other] taken as a path. */
+    operator fun plus(other: Point): Point = Point(x + other.x, y + other.y)
+
+    /** The path from [other] to this point. */
+    operator fun minus(other: Point): Point = Point(x - other.x, y - other.y)
+
+    /** Stretches (factor > 1) or shrinks (factor < 1) this path. */
+    operator fun times(factor: Float): Point = Point(x * factor, y * factor)
+
+    /** Straight-line length from this point to [other]. */
+    fun distanceTo(other: Point): Float = hypot(other.x - x, other.y - y)
+}
+
+/**
+ * The element at [i] with its two neighbours, as if the list were a ring: the one before
+ * the first is the last, the one after the last is the first. Made for polygons, where
+ * every vertex has a previous and a next one.
+ *
+ * ```
+ * val (prev, vertex, next) = polygon.around(i)
+ * ```
+ */
+fun <T> List<T>.around(i: Int): Triple<T, T, T> =
+    Triple(this[(i - 1 + size) % size], this[i], this[(i + 1) % size])
 
 /** Below this many pixels, two points are the same point. */
 internal const val EPSILON = 1e-3f
