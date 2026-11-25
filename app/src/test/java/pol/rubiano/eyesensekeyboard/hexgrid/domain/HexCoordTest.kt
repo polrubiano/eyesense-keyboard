@@ -46,6 +46,14 @@ class HexCoordTest {
         assertEquals(3, threeEast.ring)
     }
 
+    @Test
+    fun `the doubled column counts half hexagons from the middle, rows shifted by half`() {
+        assertEquals(0, HexCoord.ORIGIN.doubledColumn)
+        assertEquals(2, HexCoord(1, 0).doubledColumn)   // east: one whole hexagon
+        assertEquals(1, HexCoord(0, 1).doubledColumn)   // south-east: half a hexagon east
+        assertEquals(-1, HexCoord(-1, 1).doubledColumn) // south-west: half a hexagon west
+    }
+
     // --- hexRing / hexSpiral ---
 
     @Test

@@ -52,24 +52,24 @@ fun PanelGeometry.outline(slot: PanelSlot): SlotOutline = when (slot) {
     is PanelSlot.Cell -> SlotOutline(
         vertices = hexCorners(slot.coord),
         labelCenter = center(slot.coord),
-        labelRadius = hexWidth / 2f, // from the centre to the middle of a side
+        labelRadius = inradius,
     )
     is PanelSlot.Merged -> {
         val centers = slot.cells.map { center(it) }
         SlotOutline(
             vertices = regionOutline(slot.cells),
             labelCenter = Point(centers.map { it.x }.average().toFloat(), centers.map { it.y }.average().toFloat()),
-            labelRadius = hexWidth / 2f,
+            labelRadius = inradius,
         )
     }
     is PanelSlot.Corner -> {
         val cells = panel.cornerCells.getValue(slot.position)
         // The cell that sits farthest inside the panel horizontally: the one that fits whole.
-        val wholeCell = cells.minBy { abs(2 * it.q + it.r) }
+        val wholeCell = cells.minBy { abs(it.doubledColumn) }
         SlotOutline(
             vertices = clippedToPanel(regionOutline(cells)),
             labelCenter = center(wholeCell),
-            labelRadius = hexWidth / 2f,
+            labelRadius = inradius,
         )
     }
 }

@@ -78,7 +78,6 @@ fun String.typed(key: KeyAssignment?): String = when (key) {
         KeyAction.Speak,
         KeyAction.SelectEmotion -> this
     }
-    // Picking an option doesn't write: [pressed] stores it and closes the menu.
-    is KeyAssignment.Choice -> this
-    null -> this
+    // Neither writes: picking an option is stored by [pressed], and a free slot does nothing.
+    is KeyAssignment.Choice, null -> this
 }

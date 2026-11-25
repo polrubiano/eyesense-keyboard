@@ -27,6 +27,17 @@ data class HexCoord(val q: Int, val r: Int) {
     /** Third axis, derived. It isn't stored so it can never be inconsistent. */
     val s: Int get() = -q - r
 
+    /**
+     * Horizontal position of the cell's centre, in **half** hexagon widths from the middle
+     * column. Each row is shifted half a hexagon, so the real column is `q + r/2`; doubling
+     * it keeps it a whole number.
+     * ```
+     *   r=-1      -1     1
+     *   r= 0   -2     0     2
+     * ```
+     */
+    val doubledColumn: Int get() = 2 * q + r
+
     operator fun plus(other: HexCoord): HexCoord = HexCoord(q + other.q, r + other.r)
 
     operator fun minus(other: HexCoord): HexCoord = HexCoord(q - other.q, r - other.r)
