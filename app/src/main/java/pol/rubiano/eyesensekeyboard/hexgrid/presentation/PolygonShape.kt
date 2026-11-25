@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import pol.rubiano.eyesensekeyboard.hexgrid.domain.Point
-import kotlin.math.hypot
+import pol.rubiano.eyesensekeyboard.hexgrid.domain.around
 import kotlin.math.min
 
 /**
@@ -51,11 +51,9 @@ private fun roundedPolygonPath(vertices: List<Point>, radius: Float): Path = Pat
         close()
         return@apply
     }
-    val n = vertices.size
-    vertices.forEachIndexed { i, v ->
-        val prev = vertices[(i - 1 + n) % n]
-        val next = vertices[(i + 1) % n]
-        val cut = min(radius, min(distance(v, prev), distance(v, next)) / 2f)
+    vertices.indices.forEach { i ->
+        val (prev, v, next) = vertices.around(i)
+        val cut = min(radius, min(v.distanceTo(prev), v.distanceTo(next)) / 2f)
         val a = towards(v, prev, cut)
         val b = towards(v, next, cut)
         if (i == 0) moveTo(a.x, a.y) else lineTo(a.x, a.y)
@@ -64,10 +62,6 @@ private fun roundedPolygonPath(vertices: List<Point>, radius: Float): Path = Pat
     close()
 }
 
-/** The point [length] px away from [from], heading to [to]. */
-private fun towards(from: Point, to: Point, length: Float): Point {
-    val d = distance(from, to)
-    return Point(from.x + (to.x - from.x) * length / d, from.y + (to.y - from.y) * length / d)
-}
-
-private fun distance(p: Point, q: Point): Float = hypot(q.x - p.x, q.y - p.y)
+/** The point [length] px away from [from], heading to [to]: a fraction of the way there. */
+private fun towards(from: Point, to: Point, length: Float): Point =
+    from + (to - from) * (length / from.distanceTo(to))

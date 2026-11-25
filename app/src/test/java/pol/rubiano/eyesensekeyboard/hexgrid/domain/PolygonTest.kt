@@ -25,6 +25,39 @@ class PolygonTest {
     private fun distanceToLine(p: Point, a: Point, b: Point): Float =
         abs((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)) / hypot(b.x - a.x, b.y - a.y)
 
+    // --- Point arithmetic ---
+
+    @Test
+    fun `adding a path moves the point and subtracting gives the path back`() {
+        val from = Point(1f, 2f)
+        val to = Point(4f, 6f)
+        assertEquals(Point(3f, 4f), to - from)
+        assertEquals(to, from + (to - from))
+    }
+
+    @Test
+    fun `half the path from one point to another is the midpoint`() {
+        val from = Point(0f, 0f)
+        val to = Point(4f, -2f)
+        assertEquals(Point(2f, -1f), from + (to - from) * 0.5f)
+    }
+
+    @Test
+    fun `distance is the straight-line length, the same both ways`() {
+        val a = Point(0f, 0f)
+        val b = Point(3f, 4f)
+        assertEquals(5f, a.distanceTo(b), tolerance)
+        assertEquals(a.distanceTo(b), b.distanceTo(a), tolerance)
+    }
+
+    @Test
+    fun `around treats the list as a ring`() {
+        val vertices = listOf("a", "b", "c", "d")
+        assertEquals(Triple("d", "a", "b"), vertices.around(0))
+        assertEquals(Triple("a", "b", "c"), vertices.around(1))
+        assertEquals(Triple("c", "d", "a"), vertices.around(3))
+    }
+
     // --- ② clippedToPanel ---
 
     @Test
