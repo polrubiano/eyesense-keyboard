@@ -50,8 +50,13 @@ class WritingTest {
     }
 
     @Test
+    fun `speak leaves the field empty`() {
+        assertEquals("", "hola".typed(KeyAssignment.Function(KeyAction.Speak)))
+    }
+
+    @Test
     fun `functions without behaviour don't change the text yet`() {
-        (KeyAction.all - KeyAction.DeleteCharacter - KeyAction.ClearText).forEach { action ->
+        (KeyAction.all - KeyAction.DeleteCharacter - KeyAction.ClearText - KeyAction.Speak).forEach { action ->
             assertEquals("hola", "hola".typed(KeyAssignment.Function(action)))
         }
     }
@@ -83,6 +88,7 @@ class WritingTest {
         assertEquals("", start.text)
         assertNull(start.emotion)
         assertNull(start.openMenu)
+        assertEquals(emptyList<SpokenMessage>(), start.spoken)
         assertEquals(start.base, start.keyboard)
     }
 
@@ -143,5 +149,52 @@ class WritingTest {
     @Test(expected = IllegalStateException::class)
     fun `picking none with no menu open is a bug`() {
         start.pressed(KeyAssignment.Choice(null))
+    }
+
+    // ---- speak ----
+
+    private val speakKey = KeyAssignment.Function(KeyAction.Speak)
+
+    @Test
+    fun `speaking keeps the message and empties the field`() {
+        val state = start.copy(text = "hola").pressed(speakKey)
+        assertEquals(listOf(SpokenMessage(emotion = null, text = "hola")), state.spoken)
+        assertEquals("", state.text)
+    }
+
+    @Test
+    fun `speaking keeps the emotion for the next message`() {
+        val state = start.copy(text = "hola", emotion = Emotion.HAPPY).pressed(speakKey)
+        assertEquals(Emotion.HAPPY, state.spoken.last().emotion)
+        assertEquals(Emotion.HAPPY, state.emotion)
+    }
+
+    @Test
+    fun `spoken messages pile up, oldest first`() {
+        val state = start.copy(text = "hola").pressing(speakKey, KeyAssignment.Text("y"), speakKey)
+        assertEquals(listOf(SpokenMessage(null, "hola"), SpokenMessage(null, "y")), state.spoken)
+    }
+
+    @Test
+    fun `each message keeps the emotion it was said with`() {
+        val state = start.copy(text = "hola", emotion = Emotion.HAPPY)
+            .pressing(speakKey, emotionKey, KeyAssignment.Choice(Emotion.SAD), KeyAssignment.Text("y"), speakKey)
+        assertEquals(listOf(Emotion.HAPPY, Emotion.SAD), state.spoken.map { it.emotion })
+    }
+
+    @Test
+    fun `speaking an empty field changes nothing`() {
+        val said = start.copy(spoken = listOf(SpokenMessage(emotion = null, text = "hola")))
+        assertEquals(said, said.pressed(speakKey))
+    }
+
+    @Test
+    fun `the payload carries the emotion id and the text`() {
+        assertEquals("[happy][hola]", SpokenMessage(Emotion.HAPPY, "hola").payload)
+    }
+
+    @Test
+    fun `the payload leaves the emotion empty when there is none`() {
+        assertEquals("[][hola]", SpokenMessage(null, "hola").payload)
     }
 }
