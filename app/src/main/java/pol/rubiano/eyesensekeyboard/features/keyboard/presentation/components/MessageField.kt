@@ -7,7 +7,9 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -40,9 +42,11 @@ private const val CURSOR_ID = "cursor"
  * - Block ("insert") cursor blinking at the end. Being part of the text, it wraps to the next
  *   line together with it, and it makes a trailing space visible.
  * - No hint when empty: the blinking cursor alone shows where the text will go.
+ * - [pictogram] (the message's emotion, if any) sits before the text, outside its flow: the
+ *   text wraps beside it, and it stays visible while the field is empty.
  */
 @Composable
-fun MessageField(text: String, modifier: Modifier = Modifier) {
+fun MessageField(text: String, modifier: Modifier = Modifier, pictogram: String? = null) {
     val colors = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.small
     val scroll = rememberScrollState()
@@ -63,12 +67,17 @@ fun MessageField(text: String, modifier: Modifier = Modifier) {
             .verticalScroll(scroll)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Text(
-            text = content,
-            inlineContent = mapOf(CURSOR_ID to blockCursor()),
-            style = MaterialTheme.typography.headlineSmall,
-            color = colors.onSurface,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (pictogram != null) {
+                Text(text = pictogram, style = MaterialTheme.typography.headlineSmall)
+            }
+            Text(
+                text = content,
+                inlineContent = mapOf(CURSOR_ID to blockCursor()),
+                style = MaterialTheme.typography.headlineSmall,
+                color = colors.onSurface,
+            )
+        }
     }
 }
 
