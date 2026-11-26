@@ -54,6 +54,16 @@ class KeyboardViewModelTest {
     }
 
     @Test
+    fun `tapping speak shows the message with its emotion and empties the field`() {
+        tap(KeyAssignment.Function(KeyAction.SelectEmotion))
+        tap(KeyAssignment.Choice(Emotion.HAPPY))
+        listOf("h", "o", "l", "a").forEach { tap(KeyAssignment.Text(it)) }
+        tap(KeyAssignment.Function(KeyAction.Speak))
+        assertEquals(listOf("[happy][hola]"), state.spoken.map { it.payload })
+        assertEquals("", state.text)
+    }
+
+    @Test
     fun `the centre hexagon holds the most frequent letter`() {
         viewModel.onSlotClick(PanelSlot.Cell(HexCoord.ORIGIN))
         assertEquals("e", state.text)

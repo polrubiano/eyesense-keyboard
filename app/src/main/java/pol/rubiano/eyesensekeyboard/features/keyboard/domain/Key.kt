@@ -71,7 +71,10 @@ sealed interface KeyAction {
         override val id = "clear_text"
     }
 
-    /** Reads what's written aloud through the speaker. */
+    /**
+     * Says what's written and leaves the field ready for the next message.
+     * For now it only shows it on screen ([SpokenMessage.payload]); reading it aloud comes later.
+     */
     data object Speak : KeyAction {
         override val id = "speak"
     }

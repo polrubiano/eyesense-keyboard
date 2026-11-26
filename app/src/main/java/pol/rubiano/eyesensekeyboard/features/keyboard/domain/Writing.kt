@@ -2,7 +2,7 @@ package pol.rubiano.eyesensekeyboard.features.keyboard.domain
 
 /**
  * Everything the writing screen is about, in **one immutable value**: what's written, the
- * message's emotion and which menu is open (if any).
+ * message's emotion, which menu is open (if any) and the messages said so far.
  *
  * [keyboard] isn't stored, it's derived from [openMenu]. So the menu and the keyboard on
  * screen can never disagree: there's no second variable to forget to update.
@@ -14,15 +14,30 @@ data class Writing(
     val text: String = "",
     val emotion: Emotion? = null,
     val openMenu: Menu? = null,
+    /** Oldest first. Temporary: it lets the screen show what Speak would say, until it has a voice. */
+    val spoken: List<SpokenMessage> = emptyList(),
 ) {
     /** The keyboard on screen: [base], or the open menu built on top of it. */
     val keyboard: Keyboard = openMenu?.let { base.showing(it) } ?: base
 }
 
 /**
+ * A message that was said: the text, together with the emotion it carried at that moment.
+ * It's a snapshot: changing the emotion afterwards doesn't change what was already said.
+ */
+data class SpokenMessage(val emotion: Emotion?, val text: String) {
+
+    /**
+     * What predictions will receive: `[happy][hola]`, or `[][hola]` with no emotion.
+     * It uses [Emotion.id], not the pictogram: the emoji is for people, the id for other systems.
+     */
+    val payload: String get() = "[${emotion?.id.orEmpty()}][$text]"
+}
+
+/**
  * The state after pressing [key]. Two separate questions for every press:
  * 1. What happens to the text? [typed] decides (choices and menus don't write).
- * 2. What else changes? Opening/closing a menu, storing an option.
+ * 2. What else changes? Opening/closing a menu, storing an option, keeping what was said.
  *
  * It's a pure function, like [typed]: same state + same key → same new state. Side
  * effects (sound, AI requests…) don't belong here: whoever calls it runs them.
@@ -30,10 +45,16 @@ data class Writing(
 fun Writing.pressed(key: KeyAssignment?): Writing {
     val typed = copy(text = text.typed(key))
     return when (key) {
-        // The opener toggles: opens its menu, or closes it if it's already open.
-        is KeyAssignment.Function -> when (val menu = key.action.menu()) {
-            null -> typed
-            else -> typed.copy(openMenu = if (menu == openMenu) null else menu)
+        is KeyAssignment.Function -> when {
+            // Speaking keeps the message (with the emotion it carried) and [typed] empties the
+            // field. The emotion stays for the next message. An empty field has nothing to say.
+            key.action == KeyAction.Speak ->
+                if (text.isEmpty()) this else typed.copy(spoken = spoken + SpokenMessage(emotion, text))
+            // The opener toggles: opens its menu, or closes it if it's already open.
+            else -> when (val menu = key.action.menu()) {
+                null -> typed
+                else -> typed.copy(openMenu = if (menu == openMenu) null else menu)
+            }
         }
         // Picking is implicit: store it and close, with no confirmation.
         is KeyAssignment.Choice -> typed.storing(key.option).copy(openMenu = null)
@@ -74,8 +95,9 @@ fun String.typed(key: KeyAssignment?): String = when (key) {
         KeyAction.DeleteCharacter -> dropLast(1)
         // Wipes everything written. On an empty text it stays empty.
         KeyAction.ClearText -> ""
-        // No behaviour yet.
-        KeyAction.Speak,
+        // What was said is kept by [pressed]; the field is left empty for the next message.
+        KeyAction.Speak -> ""
+        // Opens a menu, doesn't write.
         KeyAction.SelectEmotion -> this
     }
     // Neither writes: picking an option is stored by [pressed], and a free slot does nothing.
