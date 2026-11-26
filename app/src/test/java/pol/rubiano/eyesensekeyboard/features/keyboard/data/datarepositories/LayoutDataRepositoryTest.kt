@@ -1,19 +1,21 @@
-package pol.rubiano.eyesensekeyboard.features.keyboard.data
+package pol.rubiano.eyesensekeyboard.features.keyboard.data.datarepositories
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutMemLocalDataSource
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.HexCoord
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.KeyAssignment
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutOrigin
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
 
-class InMemoryLayoutRepositoryTest {
+/** The rules, checked against the memory data source. The database itself is tested in LayoutDaoTest. */
+class LayoutDataRepositoryTest {
 
-    private val repository = InMemoryLayoutRepository()
+    private val repository = LayoutDataRepository(LayoutMemLocalDataSource())
 
     private val mySpanish = Presets.SPANISH
         .copyAsUser(LayoutId("user.es"), "Castellano (mío)")
