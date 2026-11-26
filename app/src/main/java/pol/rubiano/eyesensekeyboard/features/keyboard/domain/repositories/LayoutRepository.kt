@@ -8,9 +8,9 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 /**
  * Where layouts are stored: the presets + the user's own.
  *
- * It's asynchronous (`Flow` and `suspend`) even though the current implementation is
- * in-memory: real persistence (DataStore) is asynchronous, so this way it can be swapped
- * in later without changing anyone who uses the interface.
+ * It's asynchronous (`Flow` and `suspend`) because storage is: the layouts live in a
+ * database, and reading or writing it can't block the screen. The `Flow` emits again
+ * whenever the stored layouts change.
  */
 interface LayoutRepository {
     val characterLayouts: Flow<List<CharacterLayout>>
