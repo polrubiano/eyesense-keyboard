@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.ActiveLayoutMemLocalDataSource
 import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutMemLocalDataSource
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.HexCoord
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.KeyAssignment
@@ -15,7 +16,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
 /** The rules, checked against the memory data source. The database itself is tested in LayoutDaoTest. */
 class LayoutDataRepositoryTest {
 
-    private val repository = LayoutDataRepository(LayoutMemLocalDataSource())
+    private val repository = LayoutDataRepository(LayoutMemLocalDataSource(), ActiveLayoutMemLocalDataSource())
 
     private val mySpanish = Presets.SPANISH
         .copyAsUser(LayoutId("user.es"), "Castellano (mío)")
@@ -66,5 +67,58 @@ class LayoutDataRepositoryTest {
         val myFunctions = Presets.DEFAULT_FUNCTIONS.copyAsUser(LayoutId("user.functions"), "Mis funciones")
         repository.save(myFunctions)
         assertTrue(myFunctions in repository.functionLayouts.first())
+    }
+
+    // ---- the active layout ----
+
+    @Test
+    fun `with nothing activated, the presets are in use`() = runBlocking {
+        assertEquals(Presets.SPANISH, repository.activeCharacterLayout.first())
+        assertEquals(Presets.DEFAULT_FUNCTIONS, repository.activeFunctionLayout.first())
+    }
+
+    @Test
+    fun `an activated user layout is the one in use`() = runBlocking {
+        repository.save(mySpanish)
+        repository.activateCharacterLayout(mySpanish.id)
+        assertEquals(mySpanish, repository.activeCharacterLayout.first())
+    }
+
+    @Test
+    fun `a preset can be activated too`() = runBlocking {
+        repository.activateCharacterLayout(Presets.ENGLISH.id)
+        assertEquals(Presets.ENGLISH, repository.activeCharacterLayout.first())
+    }
+
+    @Test
+    fun `editing the active layout shows the edit right away`() = runBlocking {
+        repository.save(mySpanish)
+        repository.activateCharacterLayout(mySpanish.id)
+        val edited = mySpanish.assign(HexCoord.ORIGIN, KeyAssignment.Text("o"))
+        repository.save(edited)
+        assertEquals(edited, repository.activeCharacterLayout.first())
+    }
+
+    @Test
+    fun `deleting the active layout falls back to the preset`() = runBlocking {
+        repository.save(mySpanish)
+        repository.activateCharacterLayout(mySpanish.id)
+        repository.deleteCharacterLayout(mySpanish.id)
+        assertEquals(Presets.SPANISH, repository.activeCharacterLayout.first())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `a layout that doesn't exist can't be activated`() = runBlocking {
+        repository.activateCharacterLayout(LayoutId("user.nope"))
+    }
+
+    @Test
+    fun `the language and the functions are activated independently`() = runBlocking {
+        val myFunctions = Presets.DEFAULT_FUNCTIONS.copyAsUser(LayoutId("user.functions"), "Mis funciones")
+        repository.save(myFunctions)
+        repository.activateFunctionLayout(myFunctions.id)
+        repository.activateCharacterLayout(Presets.ENGLISH.id)
+        assertEquals(myFunctions, repository.activeFunctionLayout.first())
+        assertEquals(Presets.ENGLISH, repository.activeCharacterLayout.first())
     }
 }
