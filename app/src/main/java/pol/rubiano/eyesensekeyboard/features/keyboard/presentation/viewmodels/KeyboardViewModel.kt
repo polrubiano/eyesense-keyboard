@@ -1,11 +1,14 @@
 package pol.rubiano.eyesensekeyboard.features.keyboard.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Keyboard
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.PanelSlot
@@ -21,9 +24,16 @@ import javax.inject.Inject
  *
  * The screen draws [state] and reports taps through [onSlotClick].
  *
- * Hilt builds it (`@HiltViewModel`) and hands it the [repository]. For now it isn't read: the
- * keyboard always starts with the Spanish preset. Choosing the active layout from the
- * repository comes next.
+ * The keyboard is built from the [repository]'s active layouts and follows them: if the active
+ * language or functions change, only [Writing.base] is replaced. What's written, the emotion
+ * and the spoken messages stay, and an open menu is rebuilt on the new keyboard (it derives
+ * from `base`).
+ *
+ * ```
+ * activeCharacterLayout ─┐
+ *                        ├─ combine ─► Keyboard(PANEL, …) ─► state.base
+ * activeFunctionLayout ──┘
+ * ```
  */
 @HiltViewModel
 class KeyboardViewModel @Inject constructor(
@@ -31,10 +41,20 @@ class KeyboardViewModel @Inject constructor(
 ) : ViewModel() {
 
     // Private and mutable inside, public and read-only outside: only the ViewModel changes it.
+    // It starts with the presets so the screen has a keyboard to draw before storage answers
+    // (a few milliseconds); the active layouts replace it as soon as they arrive.
     private val _state = MutableStateFlow(
         Writing(Keyboard(Presets.PANEL, Presets.SPANISH, Presets.DEFAULT_FUNCTIONS)),
     )
     val state: StateFlow<Writing> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            combine(repository.activeCharacterLayout, repository.activeFunctionLayout) { characters, functions ->
+                Keyboard(Presets.PANEL, characters, functions)
+            }.collect { keyboard -> _state.update { it.copy(base = keyboard) } }
+        }
+    }
 
     /** The tap is resolved on the keyboard that's on screen right now: the normal one or a menu. */
     fun onSlotClick(slot: PanelSlot) {
