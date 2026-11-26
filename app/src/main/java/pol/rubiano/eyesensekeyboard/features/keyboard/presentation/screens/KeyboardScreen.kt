@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.SpokenMessage
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.components.KeyView
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.components.MessageField
@@ -42,7 +42,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.viewmodels.Ke
 @Composable
 fun KeyboardScreen(
     modifier: Modifier = Modifier,
-    viewModel: KeyboardViewModel = viewModel(),
+    viewModel: KeyboardViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val keyboard = state.keyboard

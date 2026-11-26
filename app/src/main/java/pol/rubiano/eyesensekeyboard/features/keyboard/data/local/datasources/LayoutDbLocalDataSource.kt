@@ -9,9 +9,10 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.db.mappers.toEn
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.CharacterLayout
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.FunctionLayout
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
+import javax.inject.Inject
 
 /** User layouts in the Room database: the DAO stores rows, the mappers translate them. */
-class LayoutDbLocalDataSource(private val dao: LayoutDao) : LayoutLocalDataSource {
+class LayoutDbLocalDataSource @Inject constructor(private val dao: LayoutDao) : LayoutLocalDataSource {
 
     override val characterLayouts: Flow<List<CharacterLayout>> =
         dao.characterLayouts().map { rows -> rows.map { it.toDomain() } }

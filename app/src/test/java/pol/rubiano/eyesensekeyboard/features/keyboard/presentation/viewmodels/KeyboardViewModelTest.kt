@@ -2,6 +2,8 @@ package pol.rubiano.eyesensekeyboard.features.keyboard.presentation.viewmodels
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.datarepositories.LayoutDataRepository
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutMemLocalDataSource
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.HexCoord
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.PanelSlot
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Emotion
@@ -18,7 +20,8 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Writing
  */
 class KeyboardViewModelTest {
 
-    private val viewModel = KeyboardViewModel()
+    // Built by hand, without Hilt: the rules of the real repository, with layouts kept in memory.
+    private val viewModel = KeyboardViewModel(LayoutDataRepository(LayoutMemLocalDataSource()))
 
     private val state get() = viewModel.state.value
 

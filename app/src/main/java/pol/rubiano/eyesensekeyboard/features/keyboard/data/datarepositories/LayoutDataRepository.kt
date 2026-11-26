@@ -9,6 +9,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutOrigin
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.repositories.LayoutRepository
+import javax.inject.Inject
 
 /**
  * Every layout the app knows: the presets (in code) first, then the user's (from [local]).
@@ -17,11 +18,12 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.repositories.Layout
  * - only user layouts are saved: a preset is changed by copying it (`copyAsUser`);
  * - a user layout can't take a preset's id, or it would hide the preset.
  */
-class LayoutDataRepository(
+class LayoutDataRepository @Inject constructor(
     private val local: LayoutLocalDataSource,
-    private val presetCharacters: List<CharacterLayout> = Presets.characterLayouts,
-    private val presetFunctions: List<FunctionLayout> = Presets.functionLayouts,
 ) : LayoutRepository {
+
+    private val presetCharacters: List<CharacterLayout> = Presets.characterLayouts
+    private val presetFunctions: List<FunctionLayout> = Presets.functionLayouts
 
     override val characterLayouts: Flow<List<CharacterLayout>> =
         local.characterLayouts.map { users -> presetCharacters + users }
