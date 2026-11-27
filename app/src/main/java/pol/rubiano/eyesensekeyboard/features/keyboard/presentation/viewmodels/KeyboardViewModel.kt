@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import pol.rubiano.eyesensekeyboard.features.keyboard.domain.KeyAction
+import pol.rubiano.eyesensekeyboard.features.keyboard.domain.KeyAssignment
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Keyboard
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.PanelSlot
@@ -59,5 +61,13 @@ class KeyboardViewModel @Inject constructor(
     /** The tap is resolved on the keyboard that's on screen right now: the normal one or a menu. */
     fun onSlotClick(slot: PanelSlot) {
         _state.update { it.pressed(it.keyboard.keyAt(slot)) }
+    }
+
+    /**
+     * The field's clear button. It goes through [pressed] with the same action as a clear key,
+     * so both follow one rule, kept in the domain.
+     */
+    fun onClearText() {
+        _state.update { it.pressed(KeyAssignment.Function(KeyAction.ClearText)) }
     }
 }
