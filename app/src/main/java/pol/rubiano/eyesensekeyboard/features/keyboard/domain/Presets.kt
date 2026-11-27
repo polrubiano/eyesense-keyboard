@@ -45,14 +45,18 @@ object Presets {
         merged = listOf(ENGLISH_SPACE_BAR),
     )
 
+    /**
+     * Clearing the whole text isn't a corner key: it's the "x" in the message field, next to
+     * the text it clears. [KeyAction.ClearText] stays in the catalogue for user layouts.
+     */
     val DEFAULT_FUNCTIONS = FunctionLayout(
         id = LayoutId("preset.functions"),
         name = "Funciones",
         origin = LayoutOrigin.PRESET,
         corners = mapOf(
-            CornerPosition.TOP_LEFT to KeyAction.ClearText,
+            CornerPosition.TOP_LEFT to KeyAction.SelectEmotion,
             CornerPosition.TOP_RIGHT to KeyAction.DeleteCharacter,
-            CornerPosition.BOTTOM_LEFT to KeyAction.SelectEmotion,
+            CornerPosition.BOTTOM_LEFT to KeyAction.OpenSettings,
             CornerPosition.BOTTOM_RIGHT to KeyAction.Speak,
         ),
     )

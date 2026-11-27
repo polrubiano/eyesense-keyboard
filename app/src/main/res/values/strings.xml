@@ -7,4 +7,5 @@
     <string name="key_clear_text">Borrar todo el texto</string>
     <string name="key_speak">Leer en voz alta</string>
     <string name="key_select_emotion">Elegir emoción</string>
+    <string name="key_open_settings">Ajustes</string>
 </resources>

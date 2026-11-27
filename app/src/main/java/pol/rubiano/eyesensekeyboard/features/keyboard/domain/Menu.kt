@@ -26,7 +26,8 @@ fun KeyAction.menu(): Menu? = when (this) {
     KeyAction.SelectEmotion -> Menu.Emotions
     KeyAction.DeleteCharacter,
     KeyAction.ClearText,
-    KeyAction.Speak -> null
+    KeyAction.Speak,
+    KeyAction.OpenSettings -> null
 }
 
 /**

@@ -127,6 +127,7 @@ fun KeyAction.icon(): Int = when (this) {
     KeyAction.ClearText -> R.drawable.ic_clear_all
     KeyAction.Speak -> R.drawable.ic_speak_text
     KeyAction.SelectEmotion -> R.drawable.ic_mood
+    KeyAction.OpenSettings -> R.drawable.ic_settings
 }
 
 /** What TalkBack reads for a function key. */
@@ -136,4 +137,5 @@ fun KeyAction.description(): Int = when (this) {
     KeyAction.ClearText -> R.string.key_clear_text
     KeyAction.Speak -> R.string.key_speak
     KeyAction.SelectEmotion -> R.string.key_select_emotion
+    KeyAction.OpenSettings -> R.string.key_open_settings
 }
