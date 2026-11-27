@@ -1,4 +1,4 @@
-package pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datastore
+package pol.rubiano.eyesensekeyboard.features.keyboardsettings.data.local.datastore
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import kotlinx.coroutines.CoroutineScope
@@ -21,7 +21,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 import java.io.File
 
 /** The real DataStore, writing to a temporary file: plain JVM, no phone or Robolectric needed. */
-class ActiveLayoutDataStoreManagerTest {
+class KeyboardSettingsDataStoreManagerTest {
 
     @get:Rule
     val folder = TemporaryFolder()
@@ -30,7 +30,7 @@ class ActiveLayoutDataStoreManagerTest {
 
     // Lazy: the temporary folder only exists once the test is running, not when the class is built.
     private val manager by lazy {
-        ActiveLayoutDataStoreManager(
+        KeyboardSettingsDataStoreManager(
             PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(folder.root, "settings.preferences_pb") }),
         )
     }

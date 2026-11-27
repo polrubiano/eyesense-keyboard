@@ -14,6 +14,8 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutOrigin
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.repositories.LayoutRepository
+import pol.rubiano.eyesensekeyboard.features.keyboardsettings.domain.usecases.ActivateCharacterLayoutUseCase
+import pol.rubiano.eyesensekeyboard.features.keyboardsettings.domain.usecases.GetActiveLayoutsUseCase
 import javax.inject.Inject
 
 /**
@@ -27,34 +29,36 @@ data class LanguageRow(val id: LayoutId?, val name: String?, val active: Boolean
 data class KeyboardSettingsUiState(val languages: List<LanguageRow>)
 
 /**
- * The keyboard settings' state. For now only the Idioma tab, which shows the character layouts
- * and switches the active one through the [repository].
+ * The keyboard settings' state. For now only the Idioma tab: the languages that exist (from the
+ * keyboard's [layouts]) with the one in use switched on, and a switch that chooses another.
  *
  * ```
- * characterLayouts ──────┐
- *                        ├─ combine ─► [Castellano] [English] [Usuario]
- * activeCharacterLayout ─┘               active = the one in use
+ * layouts.characterLayouts ─┐
+ *                           ├─ combine ─► [Castellano] [English] [Usuario]
+ * getActiveLayouts() ───────┘               active = the one in use
  * ```
- * There's no "only one on" logic here: the repository keeps one active layout, so switching
- * English on makes Castellano's switch turn off on its own.
+ * There's no "only one on" logic here: there's one active language, so switching English on
+ * makes Castellano's switch turn off on its own.
  */
 @HiltViewModel
 class KeyboardSettingsViewModel @Inject constructor(
-    private val repository: LayoutRepository,
+    layouts: LayoutRepository,
+    getActiveLayouts: GetActiveLayoutsUseCase,
+    private val activateCharacterLayout: ActivateCharacterLayoutUseCase,
 ) : ViewModel() {
 
     val state: StateFlow<KeyboardSettingsUiState> =
-        combine(repository.characterLayouts, repository.activeCharacterLayout, ::uiState)
+        combine(layouts.characterLayouts, getActiveLayouts()) { all, active -> uiState(all, active.characters) }
             // If storage fails, the presets are still there: the tab stays usable.
             .catch { emit(INITIAL) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), INITIAL)
 
     /**
      * A language's switch. Switching the active one again keeps it on: there's always one
-     * active layout, so a switch can't turn every language off.
+     * active language, so a switch can't turn every language off.
      */
     fun onLanguageToggle(id: LayoutId) {
-        viewModelScope.launch { repository.activateCharacterLayout(id) }
+        viewModelScope.launch { activateCharacterLayout(id) }
     }
 
     private companion object {

@@ -1,13 +1,6 @@
 package pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.viewmodels
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
@@ -17,19 +10,14 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import pol.rubiano.eyesensekeyboard.app.KeyboardStorageRule
 import pol.rubiano.eyesensekeyboard.app.MainDispatcherRule
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.datarepositories.LayoutDataRepository
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutDbLocalDataSource
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datastore.ActiveLayoutDataStoreManager
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.db.KeyboardDatabase
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
-import java.io.File
 
-/** The Idioma tab against the real storage: Room in memory and DataStore in a temporary file. */
+/** The Idioma tab against the real storage: layouts in Room and settings in DataStore. */
 @RunWith(RobolectricTestRunner::class)
 class KeyboardSettingsViewModelTest {
 
@@ -37,33 +25,16 @@ class KeyboardSettingsViewModelTest {
     val mainDispatcher = MainDispatcherRule()
 
     @get:Rule
-    val folder = TemporaryFolder()
+    val storage = KeyboardStorageRule()
 
-    private val db = Room.inMemoryDatabaseBuilder(
-        ApplicationProvider.getApplicationContext(),
-        KeyboardDatabase::class.java,
-    ).allowMainThreadQueries().build()
-
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    // Lazy: the temporary folder only exists once the test is running.
-    private val repository by lazy {
-        LayoutDataRepository(
-            LayoutDbLocalDataSource(db.layoutDao()),
-            ActiveLayoutDataStoreManager(
-                PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(folder.root, "settings.preferences_pb") }),
-            ),
-        )
+    private val viewModel by lazy {
+        KeyboardSettingsViewModel(storage.layouts, storage.getActiveLayouts, storage.activateCharacterLayout)
     }
 
-    private val viewModel by lazy { KeyboardSettingsViewModel(repository) }
-
-    /** Same order as in KeyboardViewModelTest: the ViewModel really stops before the storage closes. */
+    /** Same as in KeyboardViewModelTest: the ViewModel really stops before the storage closes. */
     @After
     fun tearDown() = runBlocking {
         viewModel.viewModelScope.coroutineContext.job.cancelAndJoin()
-        scope.cancel()
-        db.close()
     }
 
     /**
@@ -84,10 +55,10 @@ class KeyboardSettingsViewModelTest {
     }
 
     @Test
-    fun `switching english on makes it the active layout`() = runBlocking {
+    fun `switching english on makes it the chosen language`() = runBlocking {
         viewModel.onLanguageToggle(Presets.ENGLISH.id)
         awaitLanguages(listOf(spanish.copy(active = false), english.copy(active = true), noUserLayout))
-        assertEquals(Presets.ENGLISH, repository.activeCharacterLayout.first())
+        assertEquals(Presets.ENGLISH.id, storage.settings.characterLayoutId.first())
     }
 
     @Test
@@ -99,7 +70,7 @@ class KeyboardSettingsViewModelTest {
     @Test
     fun `usuario is enabled once a user layout exists`() = runBlocking {
         val mine = Presets.SPANISH.copyAsUser(LayoutId("user.es"), "Mi castellano")
-        repository.save(mine)
+        storage.layouts.save(mine)
         awaitLanguages(listOf(spanish, english, LanguageRow(mine.id, "Mi castellano", active = false, enabled = true)))
     }
 }
