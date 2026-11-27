@@ -103,19 +103,14 @@ data class SettingsSection(val tab: SettingsTab, val rows: List<SettingRowState>
     }
 }
 
+/** The Idioma tab's hexagon. */
+internal val LanguageTab = SettingsTab(R.drawable.ic_language, R.string.settings_tab_language)
+
 /**
- * Sample sections, to see the whole panel until each tab is connected: Idioma (to the active
- * layout, next), and two placeholder tabs with three sub-options each. Also used by the preview.
+ * Two placeholder tabs with three sub-options each, to see the whole panel until they have
+ * real settings. Their switches don't change.
  */
-internal val sampleSections = listOf(
-    SettingsSection(
-        SettingsTab(R.drawable.ic_language, R.string.settings_tab_language),
-        listOf(
-            SettingRowState("Castellano", checked = true),
-            SettingRowState("English", checked = false),
-            SettingRowState("Usuario", checked = false, enabled = false),
-        ),
-    ),
+internal val placeholderSections = listOf(
     SettingsSection(
         SettingsTab(R.drawable.ic_speak_text, R.string.settings_tab_sample_2),
         listOf(
@@ -133,6 +128,18 @@ internal val sampleSections = listOf(
         ),
     ),
 )
+
+/** Every tab with sample rows, for the preview. */
+private val sampleSections = listOf(
+    SettingsSection(
+        LanguageTab,
+        listOf(
+            SettingRowState("Castellano", checked = true),
+            SettingRowState("English", checked = false),
+            SettingRowState("Usuario", checked = false, enabled = false),
+        ),
+    ),
+) + placeholderSections
 
 @Preview(showBackground = true, widthDp = 400)
 @Composable

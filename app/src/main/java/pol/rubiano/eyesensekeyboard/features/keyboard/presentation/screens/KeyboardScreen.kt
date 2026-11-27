@@ -24,8 +24,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.components.Ke
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.components.MessageField
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.hexgrid.HexPanelLayout
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.viewmodels.KeyboardViewModel
-import pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.components.KeyboardSettingsPanel
-import pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.components.sampleSections
+import pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.screens.KeyboardSettingsScreen
 
 /**
  * The writing screen. Everything here will float over the camera background later on.
@@ -36,7 +35,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.compo
  * │           ├── SpokenLog                   ← temporary: what Speak would say, scrollable
  * │           └── MessageField                ← grows upwards as text is added
  * └── HexPanelLayout                          ← never shrinks
- *     or KeyboardSettingsPanel                ← in the same slot, while the settings are open
+ *     or KeyboardSettingsScreen               ← in the same slot, while the settings are open
  *
  * The field lives inside the flexible space, so when it grows it takes room from the free
  * space, never from the keyboard.
@@ -78,11 +77,8 @@ fun KeyboardScreen(
             // The keyboard's exact slot: same width and the panel's proportions, so the field
             // above doesn't move when they swap. The ratio doesn't depend on the hexagon size.
             val panelRatio = PanelGeometry(keyboard.panel, hexRadius = 1f).let { it.width / it.height }
-            KeyboardSettingsPanel(
+            KeyboardSettingsScreen(
                 panel = keyboard.panel,
-                // Sample sections until each tab is connected.
-                sections = sampleSections,
-                onToggle = { _, _ -> },
                 onClose = viewModel::onCloseSettings,
                 modifier = Modifier
                     .padding(8.dp)

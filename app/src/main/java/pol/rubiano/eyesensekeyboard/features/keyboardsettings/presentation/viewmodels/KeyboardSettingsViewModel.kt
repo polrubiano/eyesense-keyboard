@@ -1,0 +1,78 @@
+package pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.viewmodels
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import pol.rubiano.eyesensekeyboard.features.keyboard.domain.CharacterLayout
+import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
+import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutOrigin
+import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
+import pol.rubiano.eyesensekeyboard.features.keyboard.domain.repositories.LayoutRepository
+import javax.inject.Inject
+
+/**
+ * One row of the Idioma tab.
+ * - [id] is null only for the Usuario row while there's no user layout: nothing to activate.
+ * - [name] is null for that same empty row, so the UI shows its own "Usuario" label
+ *   (a ViewModel doesn't read Android strings).
+ */
+data class LanguageRow(val id: LayoutId?, val name: String?, val active: Boolean, val enabled: Boolean)
+
+data class KeyboardSettingsUiState(val languages: List<LanguageRow>)
+
+/**
+ * The keyboard settings' state. For now only the Idioma tab, which shows the character layouts
+ * and switches the active one through the [repository].
+ *
+ * ```
+ * characterLayouts ──────┐
+ *                        ├─ combine ─► [Castellano] [English] [Usuario]
+ * activeCharacterLayout ─┘               active = the one in use
+ * ```
+ * There's no "only one on" logic here: the repository keeps one active layout, so switching
+ * English on makes Castellano's switch turn off on its own.
+ */
+@HiltViewModel
+class KeyboardSettingsViewModel @Inject constructor(
+    private val repository: LayoutRepository,
+) : ViewModel() {
+
+    val state: StateFlow<KeyboardSettingsUiState> =
+        combine(repository.characterLayouts, repository.activeCharacterLayout, ::uiState)
+            // If storage fails, the presets are still there: the tab stays usable.
+            .catch { emit(INITIAL) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), INITIAL)
+
+    /**
+     * A language's switch. Switching the active one again keeps it on: there's always one
+     * active layout, so a switch can't turn every language off.
+     */
+    fun onLanguageToggle(id: LayoutId) {
+        viewModelScope.launch { repository.activateCharacterLayout(id) }
+    }
+
+    private companion object {
+        /** What the tab shows before storage answers: the presets, with the default one active. */
+        val INITIAL = uiState(Presets.characterLayouts, Presets.SPANISH)
+    }
+}
+
+/**
+ * The presets first, in their order, then one Usuario row: the first user layout (they come
+ * sorted by name), or a disabled row while there's none. There's no layout editor yet, so the
+ * panel has room for exactly one.
+ */
+private fun uiState(layouts: List<CharacterLayout>, active: CharacterLayout): KeyboardSettingsUiState {
+    fun row(layout: CharacterLayout) = LanguageRow(layout.id, layout.name, active = layout.id == active.id, enabled = true)
+
+    val presets = layouts.filter { it.origin == LayoutOrigin.PRESET }.map(::row)
+    val user = layouts.firstOrNull { it.origin == LayoutOrigin.USER }?.let(::row)
+        ?: LanguageRow(id = null, name = null, active = false, enabled = false)
+    return KeyboardSettingsUiState(presets + user)
+}
