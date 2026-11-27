@@ -62,6 +62,16 @@ class KeyboardViewModelTest {
     }
 
     @Test
+    fun `the clear button empties the text and keeps the emotion`() {
+        tap(KeyAssignment.Function(KeyAction.SelectEmotion))
+        tap(KeyAssignment.Choice(Emotion.HAPPY))
+        listOf("h", "o", "l", "a").forEach { tap(KeyAssignment.Text(it)) }
+        viewModel.onClearText()
+        assertEquals("", state.text)
+        assertEquals(Emotion.HAPPY, state.emotion)
+    }
+
+    @Test
     fun `taps are resolved on the open menu, not on the normal keyboard`() {
         tap(KeyAssignment.Function(KeyAction.SelectEmotion))
         tap(KeyAssignment.Choice(Emotion.SAD))

@@ -61,7 +61,11 @@ fun KeyboardScreen(
             ) {
                 // fill = false: the log is as tall as its messages, up to whatever the field leaves free.
                 SpokenLog(state.spoken, Modifier.weight(1f, fill = false))
-                MessageField(state.text, pictogram = state.emotion?.pictogram)
+                MessageField(
+                    text = state.text,
+                    onClear = viewModel::onClearText,
+                    pictogram = state.emotion?.pictogram,
+                )
             }
         }
 

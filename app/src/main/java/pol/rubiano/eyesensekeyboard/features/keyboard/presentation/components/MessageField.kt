@@ -7,23 +7,32 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import pol.rubiano.eyesensekeyboard.R
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
@@ -44,9 +53,22 @@ private const val CURSOR_ID = "cursor"
  * - No hint when empty: the blinking cursor alone shows where the text will go.
  * - [pictogram] (the message's emotion, if any) sits before the text, outside its flow: the
  *   text wraps beside it, and it stays visible while the field is empty.
+ * - A clear button ("x") at the end calls [onClear]. It only shows while there's text, because an
+ *   empty field has nothing to clear.
+ *
+ * ```
+ * ┌──────────────────────────────────────┐
+ * │ 😊  hola que tal▮               (✕)  │
+ * └──────────────────────────────────────┘
+ * ```
  */
 @Composable
-fun MessageField(text: String, modifier: Modifier = Modifier, pictogram: String? = null) {
+fun MessageField(
+    text: String,
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier,
+    pictogram: String? = null,
+) {
     val colors = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.small
     val scroll = rememberScrollState()
@@ -76,8 +98,39 @@ fun MessageField(text: String, modifier: Modifier = Modifier, pictogram: String?
                 inlineContent = mapOf(CURSOR_ID to blockCursor()),
                 style = MaterialTheme.typography.headlineSmall,
                 color = colors.onSurface,
+                // weight: the text takes what's left, so the button stays pinned to the end.
+                modifier = Modifier.weight(1f),
             )
+            if (text.isNotEmpty()) {
+                ClearButton(onClear)
+            }
         }
+    }
+}
+
+/**
+ * Small on purpose: a 32 dp circle is about one line of `headlineSmall`, so showing it doesn't
+ * make the field taller. `IconButton` was discarded because it reserves 48 dp.
+ *
+ * It sits at the top of the row (the Row's default alignment), so it stays next to the first
+ * line instead of moving around while the text grows.
+ */
+@Composable
+private fun ClearButton(onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_close),
+            contentDescription = stringResource(R.string.key_clear_text),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 
