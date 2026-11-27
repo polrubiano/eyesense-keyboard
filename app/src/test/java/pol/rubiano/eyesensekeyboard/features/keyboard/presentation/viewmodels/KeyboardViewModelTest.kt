@@ -8,6 +8,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -71,10 +73,17 @@ class KeyboardViewModelTest {
     // once the test is running, not when the class is built.
     private val viewModel by lazy { KeyboardViewModel(repository) }
 
-    /** The ViewModel stops listening before the storage closes, so it never reads a closed database. */
+    /**
+     * The ViewModel stops listening before the storage closes, so it never reads a closed database.
+     *
+     * `cancel()` only asks to stop: Room may be delivering a value from its own thread at that
+     * very moment, and that delivery touches `Dispatchers.Main` while the rule resets it
+     * ("Dispatchers.Main is used concurrently with setting it"). `join()` waits until the
+     * ViewModel's work has really finished.
+     */
     @After
-    fun tearDown() {
-        viewModel.viewModelScope.cancel()
+    fun tearDown() = runBlocking {
+        viewModel.viewModelScope.coroutineContext.job.cancelAndJoin()
         scope.cancel()
         db.close()
     }
