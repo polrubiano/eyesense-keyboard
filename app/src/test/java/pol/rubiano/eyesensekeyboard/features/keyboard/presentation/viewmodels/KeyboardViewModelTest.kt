@@ -124,6 +124,16 @@ class KeyboardViewModelTest {
         assertEquals("e", state.text)
     }
 
+    // ---- ready (the splash waits for it) ----
+
+    @Test
+    fun `it's ready once the chosen layouts have arrived`() = runBlocking {
+        storage.activateCharacterLayout(Presets.ENGLISH.id)
+        withTimeout(5_000) { viewModel.isReady.first { it } }
+        // Ready means the keyboard is already the chosen one, never the presets first.
+        assertEquals(KeyAssignment.Text("t"), eastOfCentre)
+    }
+
     // ---- the active layout ----
 
     /** East of the centre: "a" in Spanish, "t" in English. */

@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,18 +42,32 @@ class KeyboardViewModel @Inject constructor(
 ) : ViewModel() {
 
     // Private and mutable inside, public and read-only outside: only the ViewModel changes it.
-    // It starts with the presets so the screen has a keyboard to draw before storage answers
-    // (a few milliseconds); the active layouts replace it as soon as they arrive.
+    // `Writing` needs a keyboard from the start, so it begins with the presets. Nobody sees
+    // them: the splash stays until the active layouts arrive ([isReady]).
     private val _state = MutableStateFlow(
         Writing(Keyboard(Presets.PANEL, Presets.SPANISH, Presets.DEFAULT_FUNCTIONS)),
     )
     val state: StateFlow<Writing> = _state.asStateFlow()
 
+    private val _isReady = MutableStateFlow(false)
+
+    /**
+     * True once the keyboard is built from the user's chosen layouts. Until then, `MainActivity`
+     * keeps the splash on screen, so the presets are never shown for an instant before the
+     * chosen language (Castellano → English).
+     */
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
     init {
         viewModelScope.launch {
             getActiveLayouts()
                 .map { active -> Keyboard(Presets.PANEL, active.characters, active.functions) }
-                .collect { keyboard -> _state.update { it.copy(base = keyboard) } }
+                // If storage fails, the presets keyboard stays: better than a splash forever.
+                .catch { _isReady.value = true }
+                .collect { keyboard ->
+                    _state.update { it.copy(base = keyboard) }
+                    _isReady.value = true
+                }
         }
     }
 

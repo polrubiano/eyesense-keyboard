@@ -50,8 +50,8 @@ class KeyboardSettingsViewModel @Inject constructor(
     val state: StateFlow<KeyboardSettingsUiState> =
         combine(layouts.characterLayouts, getActiveLayouts()) { all, active -> uiState(all, active.characters) }
             // If storage fails, the presets are still there: the tab stays usable.
-            .catch { emit(INITIAL) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), INITIAL)
+            .catch { emit(FALLBACK) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LOADING)
 
     /**
      * A language's switch. Switching the active one again keeps it on: there's always one
@@ -62,8 +62,14 @@ class KeyboardSettingsViewModel @Inject constructor(
     }
 
     private companion object {
-        /** What the tab shows before storage answers: the presets, with the default one active. */
-        val INITIAL = uiState(Presets.characterLayouts, Presets.SPANISH)
+        /**
+         * Before storage answers: no rows, rather than a guess. Guessing the presets showed
+         * Castellano switched on for an instant when the user had chosen English.
+         */
+        val LOADING = KeyboardSettingsUiState(languages = emptyList())
+
+        /** If storage fails: the presets with the default one active, so a language can still be chosen. */
+        val FALLBACK = uiState(Presets.characterLayouts, Presets.SPANISH)
     }
 }
 

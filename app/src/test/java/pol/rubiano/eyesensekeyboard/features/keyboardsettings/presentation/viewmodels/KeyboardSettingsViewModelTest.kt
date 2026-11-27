@@ -50,6 +50,11 @@ class KeyboardSettingsViewModelTest {
     private val noUserLayout = LanguageRow(id = null, name = null, active = false, enabled = false)
 
     @Test
+    fun `before storage answers there are no rows, not a guessed language`() {
+        assertEquals(emptyList<LanguageRow>(), viewModel.state.value.languages)
+    }
+
+    @Test
     fun `the presets come first, castellano is active and usuario is disabled`() = runBlocking {
         awaitLanguages(listOf(spanish, english, noUserLayout))
     }
