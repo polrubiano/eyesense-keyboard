@@ -8,4 +8,7 @@
     <string name="key_speak">Leer en voz alta</string>
     <string name="key_select_emotion">Elegir emoción</string>
     <string name="key_open_settings">Ajustes</string>
+
+    <!-- Keyboard settings -->
+    <string name="settings_close">Cerrar ajustes</string>
 </resources>

@@ -3,6 +3,7 @@ package pol.rubiano.eyesensekeyboard.features.keyboard.presentation.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,10 +19,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.SpokenMessage
+import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.PanelGeometry
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.components.KeyView
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.components.MessageField
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.hexgrid.HexPanelLayout
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.viewmodels.KeyboardViewModel
+import pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.components.KeyboardSettingsPanel
 
 /**
  * The writing screen. Everything here will float over the camera background later on.
@@ -32,6 +35,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.viewmodels.Ke
  * │           ├── SpokenLog                   ← temporary: what Speak would say, scrollable
  * │           └── MessageField                ← grows upwards as text is added
  * └── HexPanelLayout                          ← never shrinks
+ *     or KeyboardSettingsPanel                ← in the same slot, while the settings are open
  *
  * The field lives inside the flexible space, so when it grows it takes room from the free
  * space, never from the keyboard.
@@ -69,14 +73,28 @@ fun KeyboardScreen(
             }
         }
 
-        HexPanelLayout(
-            panel = keyboard.panel,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(8.dp),
-            onSlotClick = viewModel::onSlotClick,
-        ) { slot ->
-            KeyView(keyboard.keyAt(slot))
+        if (state.settingsOpen) {
+            // The keyboard's exact slot: same width and the panel's proportions, so the field
+            // above doesn't move when they swap. The ratio doesn't depend on the hexagon size.
+            val panelRatio = PanelGeometry(keyboard.panel, hexRadius = 1f).let { it.width / it.height }
+            KeyboardSettingsPanel(
+                panel = keyboard.panel,
+                onClose = viewModel::onCloseSettings,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .aspectRatio(panelRatio),
+            )
+        } else {
+            HexPanelLayout(
+                panel = keyboard.panel,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(8.dp),
+                onSlotClick = viewModel::onSlotClick,
+            ) { slot ->
+                KeyView(keyboard.keyAt(slot))
+            }
         }
     }
 }

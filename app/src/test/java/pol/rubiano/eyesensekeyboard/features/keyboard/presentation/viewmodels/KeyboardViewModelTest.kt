@@ -116,6 +116,14 @@ class KeyboardViewModelTest {
     }
 
     @Test
+    fun `the settings key opens the settings and the close hexagon closes them`() {
+        tap(KeyAssignment.Function(KeyAction.OpenSettings))
+        assertEquals(true, state.settingsOpen)
+        viewModel.onCloseSettings()
+        assertEquals(false, state.settingsOpen)
+    }
+
+    @Test
     fun `taps are resolved on the open menu, not on the normal keyboard`() {
         tap(KeyAssignment.Function(KeyAction.SelectEmotion))
         tap(KeyAssignment.Choice(Emotion.SAD))

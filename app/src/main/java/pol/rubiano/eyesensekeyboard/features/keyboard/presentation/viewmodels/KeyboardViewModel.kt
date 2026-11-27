@@ -70,4 +70,9 @@ class KeyboardViewModel @Inject constructor(
     fun onClearText() {
         _state.update { it.pressed(KeyAssignment.Function(KeyAction.ClearText)) }
     }
+
+    /** The settings' close hexagon: the keyboard comes back as it was. */
+    fun onCloseSettings() {
+        _state.update { it.copy(settingsOpen = false) }
+    }
 }

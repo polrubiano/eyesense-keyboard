@@ -1,7 +1,9 @@
 package pol.rubiano.eyesensekeyboard.features.keyboard.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.HexCoord
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.PanelSlot
@@ -186,6 +188,24 @@ class WritingTest {
     fun `speaking an empty field changes nothing`() {
         val said = start.copy(spoken = listOf(SpokenMessage(emotion = null, text = "hola")))
         assertEquals(said, said.pressed(speakKey))
+    }
+
+    // ---- settings ----
+
+    private val settingsKey = KeyAssignment.Function(KeyAction.OpenSettings)
+
+    @Test
+    fun `the settings key opens the settings and keeps the text and the emotion`() {
+        val writing = start.pressing(emotionKey, KeyAssignment.Choice(Emotion.HAPPY), KeyAssignment.Text("h"))
+        val state = writing.pressed(settingsKey)
+        assertTrue(state.settingsOpen)
+        assertEquals("h", state.text)
+        assertEquals(Emotion.HAPPY, state.emotion)
+    }
+
+    @Test
+    fun `pressing the settings key again closes them`() {
+        assertFalse(start.pressing(settingsKey, settingsKey).settingsOpen)
     }
 
     @Test
