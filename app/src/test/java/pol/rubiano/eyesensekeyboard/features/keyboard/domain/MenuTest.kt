@@ -40,7 +40,7 @@ class MenuTest {
     @Test
     fun `only the opener's corner stays`() {
         assertEquals(
-            mapOf(CornerPosition.BOTTOM_LEFT to KeyAction.SelectEmotion),
+            mapOf(CornerPosition.TOP_LEFT to KeyAction.SelectEmotion),
             emotions.functions.corners,
         )
     }
@@ -49,10 +49,10 @@ class MenuTest {
     fun `the opener's corner stays wherever the user put it`() {
         val moved = Presets.DEFAULT_FUNCTIONS
             .copyAsUser(LayoutId("user.functions"), "Mis funciones")
-            .swap(CornerPosition.BOTTOM_LEFT, CornerPosition.TOP_RIGHT)
+            .swap(CornerPosition.TOP_LEFT, CornerPosition.TOP_RIGHT)
         val menu = keyboard.withFunctions(moved).showing(Menu.Emotions)
         assertEquals(mapOf(CornerPosition.TOP_RIGHT to KeyAction.SelectEmotion), menu.functions.corners)
-        assertNull(menu.keyAt(PanelSlot.Corner(CornerPosition.BOTTOM_LEFT)))
+        assertNull(menu.keyAt(PanelSlot.Corner(CornerPosition.TOP_LEFT)))
     }
 
     @Test

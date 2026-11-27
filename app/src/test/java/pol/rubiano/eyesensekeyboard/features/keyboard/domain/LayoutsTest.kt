@@ -145,6 +145,6 @@ class LayoutsTest {
             .copyAsUser(LayoutId("user.functions"), "Mis funciones")
             .swap(CornerPosition.TOP_LEFT, CornerPosition.TOP_RIGHT)
         assertEquals(KeyAction.DeleteCharacter, myFunctions.corners[CornerPosition.TOP_LEFT])
-        assertEquals(KeyAction.ClearText, myFunctions.corners[CornerPosition.TOP_RIGHT])
+        assertEquals(KeyAction.SelectEmotion, myFunctions.corners[CornerPosition.TOP_RIGHT])
     }
 }

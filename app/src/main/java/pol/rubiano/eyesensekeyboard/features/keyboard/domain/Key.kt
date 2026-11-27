@@ -84,8 +84,16 @@ sealed interface KeyAction {
         override val id = "select_emotion"
     }
 
+    /**
+     * Opens the settings. For now it only holds its place in the corners: the settings
+     * screen comes later, so pressing it does nothing yet.
+     */
+    data object OpenSettings : KeyAction {
+        override val id = "open_settings"
+    }
+
     companion object {
-        val all: List<KeyAction> = listOf(DeleteCharacter, ClearText, Speak, SelectEmotion)
+        val all: List<KeyAction> = listOf(DeleteCharacter, ClearText, Speak, SelectEmotion, OpenSettings)
 
         fun fromId(id: String): KeyAction? = all.firstOrNull { it.id == id }
     }

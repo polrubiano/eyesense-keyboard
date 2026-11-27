@@ -19,6 +19,7 @@ class KeyTest {
         assertEquals("clear_text", KeyAction.ClearText.id)
         assertEquals("speak", KeyAction.Speak.id)
         assertEquals("select_emotion", KeyAction.SelectEmotion.id)
+        assertEquals("open_settings", KeyAction.OpenSettings.id)
     }
 
     @Test
@@ -33,10 +34,11 @@ class KeyTest {
         // until they look at it here, and the size check reminds them to add it to `all`.
         KeyAction.all.forEach { action ->
             when (action) {
-                KeyAction.DeleteCharacter, KeyAction.ClearText, KeyAction.Speak, KeyAction.SelectEmotion -> Unit
+                KeyAction.DeleteCharacter, KeyAction.ClearText, KeyAction.Speak, KeyAction.SelectEmotion,
+                KeyAction.OpenSettings -> Unit
             }
         }
-        assertEquals(4, KeyAction.all.size)
+        assertEquals(5, KeyAction.all.size)
     }
 
     @Test(expected = IllegalArgumentException::class)

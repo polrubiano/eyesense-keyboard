@@ -107,9 +107,9 @@ class PresetsTest {
     fun `default functions - one per corner, in the agreed position`() {
         assertEquals(
             mapOf(
-                CornerPosition.TOP_LEFT to KeyAction.ClearText,
+                CornerPosition.TOP_LEFT to KeyAction.SelectEmotion,
                 CornerPosition.TOP_RIGHT to KeyAction.DeleteCharacter,
-                CornerPosition.BOTTOM_LEFT to KeyAction.SelectEmotion,
+                CornerPosition.BOTTOM_LEFT to KeyAction.OpenSettings,
                 CornerPosition.BOTTOM_RIGHT to KeyAction.Speak,
             ),
             Presets.DEFAULT_FUNCTIONS.corners,
