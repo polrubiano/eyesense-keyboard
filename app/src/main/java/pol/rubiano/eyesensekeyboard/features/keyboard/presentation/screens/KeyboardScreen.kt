@@ -25,6 +25,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.components.Me
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.hexgrid.HexPanelLayout
 import pol.rubiano.eyesensekeyboard.features.keyboard.presentation.viewmodels.KeyboardViewModel
 import pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.components.KeyboardSettingsPanel
+import pol.rubiano.eyesensekeyboard.features.keyboardsettings.presentation.components.sampleSections
 
 /**
  * The writing screen. Everything here will float over the camera background later on.
@@ -79,6 +80,9 @@ fun KeyboardScreen(
             val panelRatio = PanelGeometry(keyboard.panel, hexRadius = 1f).let { it.width / it.height }
             KeyboardSettingsPanel(
                 panel = keyboard.panel,
+                // Sample sections until each tab is connected.
+                sections = sampleSections,
+                onToggle = { _, _ -> },
                 onClose = viewModel::onCloseSettings,
                 modifier = Modifier
                     .padding(8.dp)
