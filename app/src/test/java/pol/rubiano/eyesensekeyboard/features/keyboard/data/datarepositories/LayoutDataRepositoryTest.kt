@@ -1,22 +1,65 @@
 package pol.rubiano.eyesensekeyboard.features.keyboard.data.datarepositories
 
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.ActiveLayoutMemLocalDataSource
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutMemLocalDataSource
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutDbLocalDataSource
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datastore.ActiveLayoutDataStoreManager
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.db.KeyboardDatabase
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.HexCoord
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.KeyAssignment
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutOrigin
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
+import java.io.File
 
-/** The rules, checked against the memory data source. The database itself is tested in LayoutDaoTest. */
+/**
+ * The rules, checked against the real storage: Room in memory and DataStore in a temporary file.
+ * Each test starts with both empty. Storage on its own is tested in LayoutDbLocalDataSourceTest
+ * and ActiveLayoutDataStoreManagerTest.
+ */
+@RunWith(RobolectricTestRunner::class)
 class LayoutDataRepositoryTest {
 
-    private val repository = LayoutDataRepository(LayoutMemLocalDataSource(), ActiveLayoutMemLocalDataSource())
+    @get:Rule
+    val folder = TemporaryFolder()
+
+    private val db = Room.inMemoryDatabaseBuilder(
+        ApplicationProvider.getApplicationContext(),
+        KeyboardDatabase::class.java,
+    ).allowMainThreadQueries().build()
+
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    // Lazy: the temporary folder only exists once the test is running, not when the class is built.
+    private val repository by lazy {
+        LayoutDataRepository(
+            LayoutDbLocalDataSource(db.layoutDao()),
+            ActiveLayoutDataStoreManager(
+                PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(folder.root, "settings.preferences_pb") }),
+            ),
+        )
+    }
+
+    @After
+    fun tearDown() {
+        scope.cancel()
+        db.close()
+    }
 
     private val mySpanish = Presets.SPANISH
         .copyAsUser(LayoutId("user.es"), "Castellano (mío)")
