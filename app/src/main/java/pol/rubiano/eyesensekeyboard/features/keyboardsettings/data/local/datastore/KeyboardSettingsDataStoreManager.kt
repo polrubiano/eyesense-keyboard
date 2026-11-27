@@ -1,4 +1,4 @@
-package pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datastore
+package pol.rubiano.eyesensekeyboard.features.keyboardsettings.data.local.datastore
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -14,24 +14,22 @@ import java.io.IOException
 import javax.inject.Inject
 
 /**
- * The active layout ids in Preferences DataStore: a small key → value file, made for settings.
+ * The keyboard settings, in their own Preferences DataStore: a small key → value file, made for
+ * settings. **Every keyboard setting lives here**; a new setting = a new key + its Flow and setter.
  *
  * ```
  * keyboard_settings.preferences_pb
- *   active_character_layout = "user.1"
- *   active_function_layout  = "preset.functions"
+ *   active_character_layout = "user.1"            ← the language the user chose
+ *   active_function_layout  = "preset.functions"  ← the corner functions the user chose
  * ```
  *
- * Each id is a separate key, so each [Flow] only emits when its own id changes
+ * Each setting is a separate key, so each [Flow] only emits when its own value changes
  * (`distinctUntilChanged`). Changing the language doesn't make the functions emit.
  *
- * It only stores the two ids. Whether they still point to a layout, and what to use when they
- * don't, is decided by
- * [LayoutDataRepository][pol.rubiano.eyesensekeyboard.features.keyboard.data.datarepositories.LayoutDataRepository].
- * It has no interface because it's the only implementation: tests use it too, writing to a
- * temporary file.
+ * It only stores the choices. Whether a chosen layout still exists, and what to use when it
+ * doesn't, is decided by the use cases in `keyboardsettings/domain/usecases`.
  */
-class ActiveLayoutDataStoreManager @Inject constructor(
+class KeyboardSettingsDataStoreManager @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) {
 

@@ -1,9 +1,6 @@
 package pol.rubiano.eyesensekeyboard.features.keyboard.di
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import dagger.Binds
 import dagger.Module
@@ -17,24 +14,20 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.db.KeyboardData
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.repositories.LayoutRepository
 import javax.inject.Singleton
 
-/** One DataStore per file and per process: the delegate guarantees it. */
-private val Context.keyboardSettings: DataStore<Preferences> by preferencesDataStore("keyboard_settings")
-
 /**
- * Tells Hilt how to build the keyboard's data layer. Everything is a singleton: one database
- * and one repository for the whole app.
+ * Tells Hilt how to build the keyboard's data layer: the layouts. Everything is a singleton: one
+ * database and one repository for the whole app. (Which layout the user chose is a setting: it's
+ * built by `KeyboardSettingsModule`.)
  *
  * ```
  * LayoutRepository ──@Binds──► LayoutDataRepository
- *                                   ├── LayoutDbLocalDataSource
- *                                   │      └── LayoutDao ◄── KeyboardDatabase
- *                                   └── ActiveLayoutDataStoreManager
- *                                          └── DataStore<Preferences>
+ *                                   └── LayoutDbLocalDataSource
+ *                                          └── LayoutDao ◄── KeyboardDatabase
  * ```
  *
  * - `@Binds`: "when someone asks for this interface, give them this class". The class is
- *   built through its `@Inject constructor`. The data sources need no binding: they're
- *   concrete classes (one implementation each), and Hilt builds them on its own.
+ *   built through its `@Inject constructor`. The data source needs no binding: it's a
+ *   concrete class (one implementation), and Hilt builds it on its own.
  * - `@Provides` (in the companion): for what can't have an `@Inject constructor`, such as
  *   the Room database, which is built with `Room.databaseBuilder`.
  *
@@ -50,11 +43,6 @@ interface KeyboardDataModule {
     fun bindLayoutRepository(repository: LayoutDataRepository): LayoutRepository
 
     companion object {
-
-        @Provides
-        @Singleton
-        fun provideKeyboardSettings(@ApplicationContext context: Context): DataStore<Preferences> =
-            context.keyboardSettings
 
         @Provides
         @Singleton

@@ -1,13 +1,8 @@
 package pol.rubiano.eyesensekeyboard.features.keyboard.presentation.viewmodels
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -15,14 +10,10 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import pol.rubiano.eyesensekeyboard.app.KeyboardStorageRule
 import pol.rubiano.eyesensekeyboard.app.MainDispatcherRule
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.datarepositories.LayoutDataRepository
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutDbLocalDataSource
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datastore.ActiveLayoutDataStoreManager
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.db.KeyboardDatabase
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.HexCoord
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.PanelSlot
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Emotion
@@ -32,7 +23,6 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Keyboard
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Writing
-import java.io.File
 
 /**
  * Only the wiring: taps reach
@@ -45,38 +35,26 @@ class KeyboardViewModelTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule()
 
+    /** Real layouts + real settings, empty for each test. */
     @get:Rule
-    val folder = TemporaryFolder()
-
-    // Built by hand, without Hilt: the real repository on real storage, Room in memory and
-    // DataStore in a temporary file. Each test starts with both empty.
-    private val db = Room.inMemoryDatabaseBuilder(
-        ApplicationProvider.getApplicationContext(),
-        KeyboardDatabase::class.java,
-    ).allowMainThreadQueries().build()
-
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    // Lazy: the temporary folder only exists once the test is running.
-    private val repository by lazy {
-        LayoutDataRepository(
-            LayoutDbLocalDataSource(db.layoutDao()),
-            ActiveLayoutDataStoreManager(
-                PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(folder.root, "settings.preferences_pb") }),
-            ),
-        )
-    }
+    val storage = KeyboardStorageRule()
 
     // Lazy: the ViewModel launches work on the main dispatcher, which the rule only swaps in
     // once the test is running, not when the class is built.
-    private val viewModel by lazy { KeyboardViewModel(repository) }
+    private val viewModel by lazy { KeyboardViewModel(storage.getActiveLayouts) }
 
-    /** The ViewModel stops listening before the storage closes, so it never reads a closed database. */
+    /**
+     * The ViewModel stops listening before the storage closes (the rule closes it after this),
+     * so it never reads a closed database.
+     *
+     * `cancel()` only asks to stop: Room may be delivering a value from its own thread at that
+     * very moment, and that delivery touches `Dispatchers.Main` while the rule resets it
+     * ("Dispatchers.Main is used concurrently with setting it"). `join()` waits until the
+     * ViewModel's work has really finished.
+     */
     @After
-    fun tearDown() {
-        viewModel.viewModelScope.cancel()
-        scope.cancel()
-        db.close()
+    fun tearDown() = runBlocking {
+        viewModel.viewModelScope.coroutineContext.job.cancelAndJoin()
     }
 
     private val state get() = viewModel.state.value
@@ -116,6 +94,14 @@ class KeyboardViewModelTest {
     }
 
     @Test
+    fun `the settings key opens the settings and the close hexagon closes them`() {
+        tap(KeyAssignment.Function(KeyAction.OpenSettings))
+        assertEquals(true, state.settingsOpen)
+        viewModel.onCloseSettings()
+        assertEquals(false, state.settingsOpen)
+    }
+
+    @Test
     fun `taps are resolved on the open menu, not on the normal keyboard`() {
         tap(KeyAssignment.Function(KeyAction.SelectEmotion))
         tap(KeyAssignment.Choice(Emotion.SAD))
@@ -138,6 +124,16 @@ class KeyboardViewModelTest {
         assertEquals("e", state.text)
     }
 
+    // ---- ready (the splash waits for it) ----
+
+    @Test
+    fun `it's ready once the chosen layouts have arrived`() = runBlocking {
+        storage.activateCharacterLayout(Presets.ENGLISH.id)
+        withTimeout(5_000) { viewModel.isReady.first { it } }
+        // Ready means the keyboard is already the chosen one, never the presets first.
+        assertEquals(KeyAssignment.Text("t"), eastOfCentre)
+    }
+
     // ---- the active layout ----
 
     /** East of the centre: "a" in Spanish, "t" in English. */
@@ -158,7 +154,7 @@ class KeyboardViewModelTest {
 
     @Test
     fun `it starts with the layouts that are active`() = runBlocking {
-        repository.activateCharacterLayout(Presets.ENGLISH.id)
+        storage.activateCharacterLayout(Presets.ENGLISH.id)
         awaitEastOfCentre(KeyAssignment.Text("t"))
         assertEquals(KeyAssignment.Text("t"), eastOfCentre)
     }
@@ -166,7 +162,7 @@ class KeyboardViewModelTest {
     @Test
     fun `changing the active language changes the keyboard and keeps what's written`() = runBlocking {
         listOf("h", "o").forEach { tap(KeyAssignment.Text(it)) }
-        repository.activateCharacterLayout(Presets.ENGLISH.id)
+        storage.activateCharacterLayout(Presets.ENGLISH.id)
         awaitEastOfCentre(KeyAssignment.Text("t"))
         assertEquals("ho", state.text)
     }
@@ -174,9 +170,9 @@ class KeyboardViewModelTest {
     @Test
     fun `an edit to the active layout reaches the keyboard`() = runBlocking {
         val mine = Presets.SPANISH.copyAsUser(LayoutId("user.es"), "Castellano 2")
-        repository.save(mine)
-        repository.activateCharacterLayout(mine.id)
-        repository.save(mine.assign(HexCoord(1, 0), KeyAssignment.Text("ñ")))
+        storage.layouts.save(mine)
+        storage.activateCharacterLayout(mine.id)
+        storage.layouts.save(mine.assign(HexCoord(1, 0), KeyAssignment.Text("ñ")))
         awaitEastOfCentre(KeyAssignment.Text("ñ"))
         assertEquals(KeyAssignment.Text("ñ"), eastOfCentre)
     }

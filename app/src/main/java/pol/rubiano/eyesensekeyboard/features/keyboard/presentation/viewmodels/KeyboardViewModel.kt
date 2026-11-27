@@ -6,7 +6,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.KeyAction
@@ -16,7 +17,7 @@ import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Presets
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.hexgrid.PanelSlot
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.Writing
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.pressed
-import pol.rubiano.eyesensekeyboard.features.keyboard.domain.repositories.LayoutRepository
+import pol.rubiano.eyesensekeyboard.features.keyboardsettings.domain.usecases.GetActiveLayoutsUseCase
 import javax.inject.Inject
 
 /**
@@ -26,35 +27,47 @@ import javax.inject.Inject
  *
  * The screen draws [state] and reports taps through [onSlotClick].
  *
- * The keyboard is built from the [repository]'s active layouts and follows them: if the active
- * language or functions change, only [Writing.base] is replaced. What's written, the emotion
- * and the spoken messages stay, and an open menu is rebuilt on the new keyboard (it derives
- * from `base`).
+ * The keyboard is built from the active layouts ([getActiveLayouts]: the user's choice, or the
+ * presets) and follows them: if the chosen language or functions change, only [Writing.base]
+ * is replaced. What's written, the emotion and the spoken messages stay, and an open menu is
+ * rebuilt on the new keyboard (it derives from `base`).
  *
  * ```
- * activeCharacterLayout ─┐
- *                        ├─ combine ─► Keyboard(PANEL, …) ─► state.base
- * activeFunctionLayout ──┘
+ * getActiveLayouts() ─► Keyboard(PANEL, characters, functions) ─► state.base
  * ```
  */
 @HiltViewModel
 class KeyboardViewModel @Inject constructor(
-    private val repository: LayoutRepository,
+    getActiveLayouts: GetActiveLayoutsUseCase,
 ) : ViewModel() {
 
     // Private and mutable inside, public and read-only outside: only the ViewModel changes it.
-    // It starts with the presets so the screen has a keyboard to draw before storage answers
-    // (a few milliseconds); the active layouts replace it as soon as they arrive.
+    // `Writing` needs a keyboard from the start, so it begins with the presets. Nobody sees
+    // them: the splash stays until the active layouts arrive ([isReady]).
     private val _state = MutableStateFlow(
         Writing(Keyboard(Presets.PANEL, Presets.SPANISH, Presets.DEFAULT_FUNCTIONS)),
     )
     val state: StateFlow<Writing> = _state.asStateFlow()
 
+    private val _isReady = MutableStateFlow(false)
+
+    /**
+     * True once the keyboard is built from the user's chosen layouts. Until then, `MainActivity`
+     * keeps the splash on screen, so the presets are never shown for an instant before the
+     * chosen language (Castellano → English).
+     */
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
     init {
         viewModelScope.launch {
-            combine(repository.activeCharacterLayout, repository.activeFunctionLayout) { characters, functions ->
-                Keyboard(Presets.PANEL, characters, functions)
-            }.collect { keyboard -> _state.update { it.copy(base = keyboard) } }
+            getActiveLayouts()
+                .map { active -> Keyboard(Presets.PANEL, active.characters, active.functions) }
+                // If storage fails, the presets keyboard stays: better than a splash forever.
+                .catch { _isReady.value = true }
+                .collect { keyboard ->
+                    _state.update { it.copy(base = keyboard) }
+                    _isReady.value = true
+                }
         }
     }
 
@@ -69,5 +82,10 @@ class KeyboardViewModel @Inject constructor(
      */
     fun onClearText() {
         _state.update { it.pressed(KeyAssignment.Function(KeyAction.ClearText)) }
+    }
+
+    /** The settings' close hexagon: the keyboard comes back as it was. */
+    fun onCloseSettings() {
+        _state.update { it.copy(settingsOpen = false) }
     }
 }

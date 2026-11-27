@@ -85,8 +85,8 @@ sealed interface KeyAction {
     }
 
     /**
-     * Opens the settings. For now it only holds its place in the corners: the settings
-     * screen comes later, so pressing it does nothing yet.
+     * Opens the keyboard settings in the keyboard's place, and closes them if they're open
+     * ([Writing.settingsOpen]).
      */
     data object OpenSettings : KeyAction {
         override val id = "open_settings"

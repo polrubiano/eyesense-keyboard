@@ -8,4 +8,12 @@
     <string name="key_speak">Leer en voz alta</string>
     <string name="key_select_emotion">Elegir emoción</string>
     <string name="key_open_settings">Ajustes</string>
+
+    <!-- Keyboard settings -->
+    <string name="settings_close">Cerrar ajustes</string>
+    <string name="settings_tab_language">Idioma</string>
+    <string name="settings_language_user">Usuario</string>
+    <!-- Placeholder tabs, to see the whole panel -->
+    <string name="settings_tab_sample_2">Opción 2</string>
+    <string name="settings_tab_sample_3">Opción 3</string>
 </resources>

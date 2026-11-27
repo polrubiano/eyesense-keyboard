@@ -16,6 +16,11 @@ data class Writing(
     val openMenu: Menu? = null,
     /** Oldest first. Temporary: it lets the screen show what Speak would say, until it has a voice. */
     val spoken: List<SpokenMessage> = emptyList(),
+    /**
+     * Whether the keyboard settings take the keyboard's place. Only the flag lives here: what
+     * the settings show and change belongs to the `keyboardsettings` feature.
+     */
+    val settingsOpen: Boolean = false,
 ) {
     /** The keyboard on screen: [base], or the open menu built on top of it. */
     val keyboard: Keyboard = openMenu?.let { base.showing(it) } ?: base
@@ -50,6 +55,8 @@ fun Writing.pressed(key: KeyAssignment?): Writing {
             // field. The emotion stays for the next message. An empty field has nothing to say.
             key.action == KeyAction.Speak ->
                 if (text.isEmpty()) this else typed.copy(spoken = spoken + SpokenMessage(emotion, text))
+            // Settings toggle, like a menu's opener: open them, or close them if they're open.
+            key.action == KeyAction.OpenSettings -> typed.copy(settingsOpen = !settingsOpen)
             // The opener toggles: opens its menu, or closes it if it's already open.
             else -> when (val menu = key.action.menu()) {
                 null -> typed
@@ -99,7 +106,7 @@ fun String.typed(key: KeyAssignment?): String = when (key) {
         KeyAction.Speak -> ""
         // Opens a menu, doesn't write.
         KeyAction.SelectEmotion -> this
-        // Opens the settings (not yet), doesn't write.
+        // Opens the settings ([pressed] does it), doesn't write.
         KeyAction.OpenSettings -> this
     }
     // Neither writes: picking an option is stored by [pressed], and a free slot does nothing.
