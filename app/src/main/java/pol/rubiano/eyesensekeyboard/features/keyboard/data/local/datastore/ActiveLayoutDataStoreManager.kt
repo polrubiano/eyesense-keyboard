@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.ActiveLayoutLocalDataSource
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
 import java.io.IOException
 import javax.inject.Inject
@@ -25,10 +24,16 @@ import javax.inject.Inject
  *
  * Each id is a separate key, so each [Flow] only emits when its own id changes
  * (`distinctUntilChanged`). Changing the language doesn't make the functions emit.
+ *
+ * It only stores the two ids. Whether they still point to a layout, and what to use when they
+ * don't, is decided by
+ * [LayoutDataRepository][pol.rubiano.eyesensekeyboard.features.keyboard.data.datarepositories.LayoutDataRepository].
+ * It has no interface because it's the only implementation: tests use it too, writing to a
+ * temporary file.
  */
 class ActiveLayoutDataStoreManager @Inject constructor(
     private val dataStore: DataStore<Preferences>,
-) : ActiveLayoutLocalDataSource {
+) {
 
     /**
      * If the file can't be read, it behaves as if nothing was stored: the keyboard falls back
@@ -38,15 +43,17 @@ class ActiveLayoutDataStoreManager @Inject constructor(
         if (error is IOException) emit(emptyPreferences()) else throw error
     }
 
-    override val characterLayoutId: Flow<LayoutId?> = idAt(CHARACTER_LAYOUT)
+    /** Null until a character layout has been activated. */
+    val characterLayoutId: Flow<LayoutId?> = idAt(CHARACTER_LAYOUT)
 
-    override val functionLayoutId: Flow<LayoutId?> = idAt(FUNCTION_LAYOUT)
+    /** Null until a function layout has been activated. */
+    val functionLayoutId: Flow<LayoutId?> = idAt(FUNCTION_LAYOUT)
 
-    override suspend fun setCharacterLayoutId(id: LayoutId) {
+    suspend fun setCharacterLayoutId(id: LayoutId) {
         dataStore.edit { it[CHARACTER_LAYOUT] = id.value }
     }
 
-    override suspend fun setFunctionLayoutId(id: LayoutId) {
+    suspend fun setFunctionLayoutId(id: LayoutId) {
         dataStore.edit { it[FUNCTION_LAYOUT] = id.value }
     }
 

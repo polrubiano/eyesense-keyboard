@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.ActiveLayoutLocalDataSource
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.LayoutLocalDataSource
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutDbLocalDataSource
+import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datastore.ActiveLayoutDataStoreManager
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.CharacterLayout
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.FunctionLayout
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.LayoutId
@@ -34,8 +34,8 @@ import javax.inject.Inject
  * list changes, and the active layout falls back to the preset on its own.
  */
 class LayoutDataRepository @Inject constructor(
-    private val local: LayoutLocalDataSource,
-    private val active: ActiveLayoutLocalDataSource,
+    private val local: LayoutDbLocalDataSource,
+    private val active: ActiveLayoutDataStoreManager,
 ) : LayoutRepository {
 
     private val presetCharacters: List<CharacterLayout> = Presets.characterLayouts

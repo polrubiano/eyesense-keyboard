@@ -12,11 +12,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import pol.rubiano.eyesensekeyboard.features.keyboard.data.datarepositories.LayoutDataRepository
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.ActiveLayoutLocalDataSource
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.LayoutLocalDataSource
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datastore.ActiveLayoutDataStoreManager
 import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.daos.LayoutDao
-import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.datasources.LayoutDbLocalDataSource
 import pol.rubiano.eyesensekeyboard.features.keyboard.data.local.db.KeyboardDatabase
 import pol.rubiano.eyesensekeyboard.features.keyboard.domain.repositories.LayoutRepository
 import javax.inject.Singleton
@@ -30,14 +26,15 @@ private val Context.keyboardSettings: DataStore<Preferences> by preferencesDataS
  *
  * ```
  * LayoutRepository ──@Binds──► LayoutDataRepository
- *                                   ├── LayoutLocalDataSource ──@Binds──► LayoutDbLocalDataSource
- *                                   │                                         └── LayoutDao ◄── KeyboardDatabase
- *                                   └── ActiveLayoutLocalDataSource ──@Binds──► ActiveLayoutDataStoreManager
- *                                                                                  └── DataStore<Preferences>
+ *                                   ├── LayoutDbLocalDataSource
+ *                                   │      └── LayoutDao ◄── KeyboardDatabase
+ *                                   └── ActiveLayoutDataStoreManager
+ *                                          └── DataStore<Preferences>
  * ```
  *
  * - `@Binds`: "when someone asks for this interface, give them this class". The class is
- *   built through its `@Inject constructor`.
+ *   built through its `@Inject constructor`. The data sources need no binding: they're
+ *   concrete classes (one implementation each), and Hilt builds them on its own.
  * - `@Provides` (in the companion): for what can't have an `@Inject constructor`, such as
  *   the Room database, which is built with `Room.databaseBuilder`.
  *
@@ -51,14 +48,6 @@ interface KeyboardDataModule {
     @Binds
     @Singleton
     fun bindLayoutRepository(repository: LayoutDataRepository): LayoutRepository
-
-    @Binds
-    @Singleton
-    fun bindLayoutLocalDataSource(source: LayoutDbLocalDataSource): LayoutLocalDataSource
-
-    @Binds
-    @Singleton
-    fun bindActiveLayoutLocalDataSource(source: ActiveLayoutDataStoreManager): ActiveLayoutLocalDataSource
 
     companion object {
 
